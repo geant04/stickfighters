@@ -12,6 +12,7 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
+import com.sun.javafx.geom.Shape;
 
 public class Player {
     private final int speed;
@@ -172,8 +173,7 @@ public class Player {
 
         batch.begin();
         hand.setOriginCenter();
-
-        batch.draw(currentFrame, x, y, 0, 0, width, height,
+        batch.draw(currentFrame, x, y, width / 2, 0, width, height,
                 (flip ? -1 : 1) * 1f, 1f, 0); // Draw current frame at (50, 50)
 
         hand.setSize(width / 2, width / 2);

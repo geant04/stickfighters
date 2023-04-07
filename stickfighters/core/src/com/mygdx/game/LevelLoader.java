@@ -49,6 +49,27 @@ public class LevelLoader {
         for(int i=0; i < map.length; i++){
             for(int j=0; j < map[0].length; j++){
                 Tile t = map[i][j];
+
+                int id = t.getId();
+                int[] x = {-1,1,0,0};
+                int[] y = {0,0,-1,1};
+                String enc = "";
+                for(int u=0; u<4; u++){
+                    int nx = i + x[u];
+                    int ny = j + y[u];
+                    if(nx >= 0 && nx < map.length
+                        && ny >= 0 && ny < map[0].length){
+                        Tile n = map[nx][ny];
+                        if(n.getId() != id){
+                            enc += "1";
+                        }else{
+                            enc += "0";
+                        }
+                    }
+                }
+                //System.out.println(enc);
+                t.setTexture(Integer.parseInt(String.valueOf(enc), 2));
+
                 Sprite sprite = t.getSprite();
                 sprite.setPosition(j * tile_size, i * tile_size);
                 sprite.setSize(tile_size, tile_size);

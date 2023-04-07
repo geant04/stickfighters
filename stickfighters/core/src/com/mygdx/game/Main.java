@@ -29,13 +29,11 @@ public class Main extends ApplicationAdapter {
 		player = new Player(250, 50, 70);
 		player.set((int)camera.position.x, (int)camera.position.y);
 
-		Texture wall_txt = new Texture(Gdx.files.internal("block.png"));
+		Texture wall_txt = new Texture(Gdx.files.internal("test.png"));
 		Texture floor_txt = new Texture(Gdx.files.internal("flr.png"));
 
-		Tile wall = new Wall(
-				new Texture[] {wall_txt});
-		Tile floor = new Floor(
-				new Texture[] {floor_txt});
+		Tile wall = new Wall(wall_txt);
+		Tile floor = new Floor(floor_txt);
 		 // consider using a texture atlas, i think you can shove this into the wall file
 
 		Tile[][] tmap = {

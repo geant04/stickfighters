@@ -1,19 +1,28 @@
 package com.mygdx.game;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Sprite;
-import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 
 public class Tile {
     private int id;
-    private Texture[] txt;
+    private Texture txt;
     private Sprite sprite;
     private boolean CanCollide;
+    TextureRegion[] states;
 
-    public Tile(Texture[] txt){
+    public Tile(Texture txt){
         this.txt = txt;
-        this.sprite = new Sprite(txt[0]);
+        TextureRegion[][] tmp = TextureRegion.split(txt,
+                txt.getWidth() / 4,
+                txt.getHeight() / 4);
+        this.states = new TextureRegion[16];
+        for(int i=0; i<4; i++){
+            for(int j=0; j<4; j++){
+                states[(i*4)+j] = tmp[i][j];
+            }
+        }
+        this.sprite = new Sprite(states[0]);
         this.CanCollide = false;
         this.id = 0;
     }
@@ -22,22 +31,12 @@ public class Tile {
         return this.sprite;
     }
     public boolean isCanCollide(){ return CanCollide;}
-
+    public int getId(){
+        return id;
+    }
     public void setTexture(int i){
-        this.sprite = new Sprite(txt[i]);
+        this.sprite = new Sprite(states[i]);
     }
-
-    // keep track of position?
-    /*
-    public void render(ShapeRenderer shape, SpriteBatch batch){
-        batch.begin();
-            // how does raycasting lighting work for my game?
-        batch.end();
-
-        shape.begin(ShapeRenderer.ShapeType.Filled); // draw line, rectangle
-        shape.end();
-    }
-     */
 
     public void dispose(){
         this.dispose();
