@@ -27,7 +27,7 @@ public class Player {
     private float y;
 
     private final Sprite hand;
-    private Sprite body;
+    //private Sprite body;
 
     private int hand_offset = 20;
     private int radius = 30;
@@ -43,7 +43,7 @@ public class Player {
 
     public Player(int speed, int width, int height){
         hand_texture = new Texture(Gdx.files.internal("badlogic.jpg"));
-        body_texture = new Texture(Gdx.files.internal("body.gif"));
+        //body_texture = new Texture(Gdx.files.internal("body.gif"));
 
         this.speed = speed;
         this.width = width;
@@ -137,6 +137,7 @@ public class Player {
         if(Gdx.input.isKeyPressed(Input.Keys.W)) {
             vy = 1;
         }
+        radius = (flip ? -30 : 30);
         updateHand();
     }
 
@@ -149,6 +150,7 @@ public class Player {
         shape.setProjectionMatrix(camera.combined);
         stateTime += Gdx.graphics.getDeltaTime();
 
+        /*
         float mx = cords.x;
         float my = cords.y;
         Vector2 pivot = Pivot();
@@ -164,6 +166,7 @@ public class Player {
         }else{
             this.radius = 30;
         }
+        */
 
         currAnim = idleAnimation;
         if(!(vx == 0 && vy == 0)){
@@ -172,12 +175,12 @@ public class Player {
         TextureRegion currentFrame = currAnim.getKeyFrame(stateTime, true);
 
         batch.begin();
-        hand.setOriginCenter();
+        //hand.setOriginCenter();
         batch.draw(currentFrame, x, y, width / 2, 0, width, height,
                 (flip ? -1 : 1) * 1f, 1f, 0); // Draw current frame at (50, 50)
 
         hand.setSize(width / 2, width / 2);
-        hand.setRotation(angle);
+        //hand.setRotation(angle);
         hand.draw(batch);
         batch.end();
     }

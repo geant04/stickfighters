@@ -1,8 +1,12 @@
 package com.mygdx.game;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
+
+import java.util.HashMap;
 
 public class LevelLoader {
     private int tile_size;
@@ -11,11 +15,30 @@ public class LevelLoader {
     private int px;
     private int py;
 
+    private TextureRegion[][] textures;
+
     public LevelLoader(Tile[][] map, int tile_size, Player player, int[] source){
         this.map = map;
         this.tile_size = tile_size;
         this.player = player;
 
+        Texture wall_txt = new Texture(Gdx.files.internal("template.png"));
+        Texture floor_txt = new Texture(Gdx.files.internal("flr.png"));
+
+        TextureRegion[][] tmp = TextureRegion.split(wall_txt,
+                wall_txt.getWidth() / 4,
+                wall_txt.getHeight() / 4);
+        TextureRegion[][] tmp2 = TextureRegion.split(floor_txt,
+                floor_txt.getWidth() / 4,
+                floor_txt.getHeight() / 4);
+        textures = new TextureRegion[16][16];
+
+        for(int i=0; i<4; i++){
+            for(int j=0; j<4; j++){
+                textures[1][(i*4)+j] = tmp[i][j];
+                textures[0][(i*4)+j] = tmp2[i][j];
+            }
+        }
         player.set(source[0] * tile_size, source[1] * tile_size);
     }
 
@@ -37,6 +60,13 @@ public class LevelLoader {
         int cx = (int) (player.getX() + dx + player.getWidth() / 2) /  tile_size;
         int cy = (int) (player.getY() + dy) /  tile_size;
 
+        if(cx >= map[0].length || cx < 0){
+            return;
+        }
+        if(cy >= map.length || cy < 0){
+            return;
+        }
+        //System.out.println(cx + "," + cy);
         if(!map[cy][cx].isCanCollide()){
             player.set(player.getX() + dx,
                     player.getY() + dy);
@@ -68,7 +98,10 @@ public class LevelLoader {
                     }
                 }
                 //System.out.println(enc);
-                t.setTexture(Integer.parseInt(String.valueOf(enc), 2));
+                int indx = Integer.parseInt(String.valueOf(enc), 2);
+
+                t.setTexture(textures[id][indx].getTexture());
+                //t.setTexture(Integer.parseInt(String.valueOf(enc), 2));
 
                 Sprite sprite = t.getSprite();
                 sprite.setPosition(j * tile_size, i * tile_size);
@@ -76,30 +109,11 @@ public class LevelLoader {
                 sprite.draw(batch);
 
                 // check id of x-1, x+1, y-1, y+1 match. Depending on the boolean?
-                /*
-                int id = t.getID();
-
-                int[] x = {-1,1};
-                int[] y = {-1,1};
-                String encoding = "";
-
-                for(int u=0; u<x.length; u++){ // constant time optimization
-                    for(int v=0; v<y.length; v++){
-                    Tile n = map[i+x[u]][j+y[v]];
-                    if(n.getID() != id)){
-                        encoding += "0";
-                    else{
-                        encoding += "1";
-                    }
-                    }
-                }
-                t.newSprite(texture_pack[Integer.parseInt(encoding, 2)]);
-
                 // somehow convert encoding to binary
                 // grab texture from that binary
-                */
             }
         }
         batch.end();
     }
+
 }

@@ -14,15 +14,6 @@ public class Floor extends Tile{
     public Floor(Texture txt){
         super(txt);
         this.txt = txt;
-        TextureRegion[][] tmp = TextureRegion.split(txt,
-                txt.getWidth() / 4,
-                txt.getHeight() / 4);
-        this.states = new TextureRegion[16];
-        for(int i=0; i<4; i++){
-            for(int j=0; j<4; j++){
-                states[i+j] = tmp[i][j];
-            }
-        }
         this.sprite = new Sprite(txt);
         this.CanCollide = false;
         this.id = 0;
@@ -33,7 +24,7 @@ public class Floor extends Tile{
         return CanCollide;
     }
     @Override
-    public void setTexture(int i){
-        this.sprite = new Sprite(states[0]);
+    public void setTexture(Texture txt){
+        this.sprite = new Sprite(txt);
     }
 }

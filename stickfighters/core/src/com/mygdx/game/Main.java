@@ -29,7 +29,7 @@ public class Main extends ApplicationAdapter {
 		player = new Player(250, 50, 70);
 		player.set((int)camera.position.x, (int)camera.position.y);
 
-		Texture wall_txt = new Texture(Gdx.files.internal("test.png"));
+		Texture wall_txt = new Texture(Gdx.files.internal("template.png"));
 		Texture floor_txt = new Texture(Gdx.files.internal("flr.png"));
 
 		Tile wall = new Wall(wall_txt);
@@ -37,27 +37,12 @@ public class Main extends ApplicationAdapter {
 		 // consider using a texture atlas, i think you can shove this into the wall file
 
 		Tile[][] tmap = {
-				{wall, wall, wall, wall, wall, wall, wall, wall, wall ,wall, wall, wall},
-				{wall, floor, floor, floor, floor, wall, wall, wall, floor ,floor, wall, wall},
-				{wall, floor, floor, floor, floor, floor, floor, floor, floor ,floor, floor, wall},
-				{wall, floor, floor, floor, floor, wall, wall, wall, floor ,floor, floor, wall},
-				{wall, floor, floor, floor, floor, wall, wall, wall, floor ,floor, wall, wall},
-				{wall, wall, wall, wall, wall, wall, wall, wall, wall ,floor, wall, wall},
-				{wall, wall, wall, wall, wall, wall, wall, wall, wall ,floor, wall, wall},
-				{wall, floor, floor, floor, wall, wall, floor, floor, floor ,floor, wall, wall},
-				{wall, floor, floor, floor, floor, floor, floor, wall, wall ,floor, wall, wall},
-				{wall, floor, floor, floor, wall, wall, floor, wall, wall ,floor, wall, wall},
-				{wall, wall, wall, wall, wall, wall, floor, floor, floor ,floor, floor, wall},
-				{wall, wall, wall, wall, wall, wall, wall, floor, wall ,wall, floor, wall},
-				{wall, wall, wall, wall, wall, wall, wall, floor, wall ,wall, floor, wall},
-				{wall, wall, wall, floor, floor, floor, wall, floor, wall ,wall, floor, wall},
-				{wall, floor, floor, floor, floor, floor, floor, floor, wall ,floor, floor, wall},
-				{wall, floor, floor, floor, floor, floor, wall, wall, wall ,floor, floor, wall},
-				{wall, floor, floor, floor, floor, wall, wall, wall, wall ,wall, wall, wall},
-				{wall, wall, wall, wall, wall, wall, wall, wall, wall ,wall, wall, wall}
+				{floor, floor, floor, floor},
+				{floor, floor, floor, floor},
+				{floor, floor, floor, floor}
 		};
 
-		this.level = new LevelLoader(tmap, 100, player, new int[]{1,1});
+		this.level = new LevelLoader(tmap, 120, player, new int[]{1,1});
 	}
 
 	@Override
