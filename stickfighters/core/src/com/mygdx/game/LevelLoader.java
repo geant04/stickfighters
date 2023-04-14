@@ -14,7 +14,6 @@ public class LevelLoader {
     private Tile[][] map;
     private int px;
     private int py;
-
     private TextureRegion[][] textures;
 
     public LevelLoader(Tile[][] map, int tile_size, Player player, int[] source){
@@ -98,7 +97,7 @@ public class LevelLoader {
                     }
                 }
                 //System.out.println(enc);
-                int indx = Integer.parseInt(String.valueOf(enc), 2);
+                int indx = Integer.parseInt(enc, 2);
 
                 t.setTexture(textures[id][indx].getTexture());
                 //t.setTexture(Integer.parseInt(String.valueOf(enc), 2));

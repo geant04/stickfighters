@@ -9,37 +9,46 @@ import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
-import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
-import com.sun.javafx.geom.Shape;
+import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.utils.Pool;
+
+import java.util.ArrayList;
 
 public class Player {
     private final int speed;
     private int width;
     private int height;
-    private boolean flip = false;
+    public static boolean flip = false;
 
-    private float vx = 1;
-    private float vy = 1;
+    public float vx = 1;
+    public float vy = 1;
 
     private float x;
     private float y;
 
     private final Sprite hand;
-    //private Sprite body;
-
     private int hand_offset = 20;
     private int radius = 30;
     private Texture hand_texture;
     private Texture body_texture;
     private ShapeRenderer shapeRenderer;
+    public ArrayList<Weapon> arms;
 
     Animation<TextureRegion> walkAnimation;
     Animation<TextureRegion> idleAnimation;
     Animation<TextureRegion> currAnim;
     private Texture stick_sprite;
     float stateTime;
+
+    private final Array<Bullet> activeBullets = new Array<Bullet>();
+    private final Pool<Bullet> bulletPool = new Pool<Bullet>() {
+        @Override
+        protected Bullet newObject() {
+            return new Bullet();
+        }
+    };
 
     public Player(int speed, int width, int height){
         hand_texture = new Texture(Gdx.files.internal("badlogic.jpg"));
@@ -64,7 +73,6 @@ public class Player {
                 idle[i]= tmp[0][i];
             }
         }
-
         walkAnimation = new Animation<TextureRegion>(0.07f, walkFrames);
         idleAnimation = new Animation<TextureRegion>(0.05f, idle);
         currAnim = idleAnimation;
@@ -75,7 +83,8 @@ public class Player {
         this.y = 200;
         this.width = this.width;
         this.height = this.height;
-
+        this.arms = new ArrayList<>();
+        this.arms.add(new Weapon(0, 0, hand_texture, 1500));
         updateHand();
 
         shapeRenderer = new ShapeRenderer();
@@ -117,6 +126,18 @@ public class Player {
     }
 
     public void update(){
+        Bullet item;
+        if(Gdx.input.isKeyJustPressed(Input.Keys.J)){
+            arms.get(0).Attack(bulletPool, activeBullets, new Vector2(getX(), getY()));
+        }
+        int len = activeBullets.size;
+        for (int i = len; --i >= 0;) {
+            item = activeBullets.get(i);
+            if (!item.alive) {
+                activeBullets.removeIndex(i);
+                bulletPool.free(item);
+            }
+        }
         this.vx = 0;
         this.vy = 0;
 
@@ -139,6 +160,10 @@ public class Player {
         }
         radius = (flip ? -30 : 30);
         updateHand();
+
+        for(Bullet b : activeBullets){
+            b.update();
+        }
     }
 
     public Vector2 Pivot(){
@@ -182,9 +207,14 @@ public class Player {
         hand.setSize(width / 2, width / 2);
         //hand.setRotation(angle);
         hand.draw(batch);
+        for(Bullet b : activeBullets){
+            Sprite sprite = b.getSprite();
+            sprite.setPosition(b.position.x + width/2, b.position.y + width/2);
+            sprite.setSize(20, 20);
+            b.getSprite().draw(batch);
+        }
         batch.end();
     }
-
     public void dispose(){
         stick_sprite.dispose();
         shapeRenderer.dispose();
