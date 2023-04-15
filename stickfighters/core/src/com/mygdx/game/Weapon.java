@@ -18,10 +18,10 @@ public class Weapon {
         this.speed = speed;
     }
 
-    public void Attack(Pool<Bullet> bulletPool, Array<Bullet> activeBullets, Vector2 origin){
+    public void Attack(Pool<Bullet> bulletPool, Array<Bullet> activeBullets, Vector2 size, Vector2 origin){
         // obviously this will get overrided based on what weapon you're using
         Bullet item = bulletPool.obtain();
-        item.init(origin.x, origin.y, txt, new Vector2((Player.flip ? -1 : 1), 0), speed);
+        item.init(origin.x, origin.y, txt, size, new Vector2((Player.flip ? -1 : 1), 0), speed);
         activeBullets.add(item);
     }
 

@@ -14,8 +14,6 @@ import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Pool;
 
-import java.util.ArrayList;
-
 public class Player {
     private final int speed;
     private int width;
@@ -34,7 +32,7 @@ public class Player {
     private Texture hand_texture;
     private Texture body_texture;
     private ShapeRenderer shapeRenderer;
-    public ArrayList<Weapon> arms;
+    public Array<Weapon> arms;
 
     Animation<TextureRegion> walkAnimation;
     Animation<TextureRegion> idleAnimation;
@@ -83,7 +81,7 @@ public class Player {
         this.y = 200;
         this.width = this.width;
         this.height = this.height;
-        this.arms = new ArrayList<>();
+        this.arms = new Array<>();
         this.arms.add(new Weapon(0, 0, hand_texture, 1500));
         updateHand();
 
@@ -128,7 +126,7 @@ public class Player {
     public void update(){
         Bullet item;
         if(Gdx.input.isKeyJustPressed(Input.Keys.J)){
-            arms.get(0).Attack(bulletPool, activeBullets, new Vector2(getX(), getY()));
+            arms.get(0).Attack(bulletPool, activeBullets, new Vector2(20, 20), new Vector2(getX(), getY()));
         }
         int len = activeBullets.size;
         for (int i = len; --i >= 0;) {
@@ -162,6 +160,12 @@ public class Player {
         updateHand();
 
         for(Bullet b : activeBullets){
+            for(Enemy e : Main.enemies){
+                if(e.isCollide(b)){
+                    b.hit= true; // makes the bullet unalive itself
+                    e.damage(10);
+                }
+            }
             b.update();
         }
     }
@@ -170,36 +174,16 @@ public class Player {
         return new Vector2(getX() + hand_offset, (float) (getY() + this.height / 2.5));
     }
 
-    public void render(ShapeRenderer shape, SpriteBatch batch, OrthographicCamera camera){
+    public void render(ShapeRenderer shape, SpriteBatch batch, OrthographicCamera camera, float stateTime){
         Vector3 cords = camera.unproject(new Vector3(Gdx.input.getX(), Gdx.input.getY(), 0));
         shape.setProjectionMatrix(camera.combined);
-        stateTime += Gdx.graphics.getDeltaTime();
-
-        /*
-        float mx = cords.x;
-        float my = cords.y;
-        Vector2 pivot = Pivot();
-
-        float angle = (float) ((MathUtils.atan2(my - hand.getY(), mx - hand.getX()))
-                * 180 / Math.PI);
-        float turn_angle = (float) ((MathUtils.atan2(my - pivot.y, mx - pivot.x))
-                * 180 / Math.PI);
-
-        if(turn_angle > 90 || turn_angle < - 90){
-            this.radius = -30;
-            angle += 180;
-        }else{
-            this.radius = 30;
-        }
-        */
-
         currAnim = idleAnimation;
         if(!(vx == 0 && vy == 0)){
             currAnim = walkAnimation;
         }
         TextureRegion currentFrame = currAnim.getKeyFrame(stateTime, true);
 
-        batch.begin();
+        //batch.begin();
         //hand.setOriginCenter();
         batch.draw(currentFrame, x, y, width / 2, 0, width, height,
                 (flip ? -1 : 1) * 1f, 1f, 0); // Draw current frame at (50, 50)
@@ -210,10 +194,10 @@ public class Player {
         for(Bullet b : activeBullets){
             Sprite sprite = b.getSprite();
             sprite.setPosition(b.position.x + width/2, b.position.y + width/2);
-            sprite.setSize(20, 20);
+            sprite.setSize(b.size.x, b.size.y);
             b.getSprite().draw(batch);
         }
-        batch.end();
+        //batch.end();
     }
     public void dispose(){
         stick_sprite.dispose();

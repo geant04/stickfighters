@@ -6,6 +6,8 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ScreenUtils;
 
 public class Main extends ApplicationAdapter {
@@ -14,9 +16,13 @@ public class Main extends ApplicationAdapter {
 
 	private SpriteBatch batch;
 	private OrthographicCamera camera;
-	private Player player;
-	private LevelLoader level;
 	private ShapeRenderer shapeRenderer;
+
+	public static LevelLoader level;
+	public static Array<Enemy> enemies;
+	public static Player player;
+
+	private float stateTime;
 
 	@Override
 	public void create () {
@@ -28,6 +34,9 @@ public class Main extends ApplicationAdapter {
 		shapeRenderer = new ShapeRenderer();
 		player = new Player(250, 50, 70);
 		player.set((int)camera.position.x, (int)camera.position.y);
+		enemies = new Array<>();
+		enemies.add(new Enemy(100, 50, 70,
+				new Vector2(300,150), 100));
 
 		Texture wall_txt = new Texture(Gdx.files.internal("template.png"));
 		Texture floor_txt = new Texture(Gdx.files.internal("flr.png"));
@@ -43,10 +52,12 @@ public class Main extends ApplicationAdapter {
 		};
 
 		this.level = new LevelLoader(tmap, 120, player, new int[]{1,1});
+		this.stateTime = 0;
 	}
 
 	@Override
 	public void render () {
+		stateTime += Gdx.graphics.getDeltaTime();
 		ScreenUtils.clear( (float) 0.5, (float) 0.5, (float) 0.5, 0);
 		// tell the camera to update its matrices.
 		camera.position.x = player.getX() + player.getWidth() / 2;
@@ -63,10 +74,18 @@ public class Main extends ApplicationAdapter {
 		shapeRenderer.rect(0, 0, WIDTH, (HEIGHT_LIMIT) - player.getHeight() + 10);
 		shapeRenderer.end();
 		 */
-		level.render(batch);
-		level.updatePlayer();
-		player.render(shapeRenderer, batch, camera);
+		batch.begin();
+			level.render(batch);
+			level.updatePlayer();
+			for(Enemy e : enemies){
+				e.render(batch, stateTime);
+			}
+			player.render(shapeRenderer, batch, camera, stateTime);
+		batch.end();
 		player.update();
+		for(Enemy e : enemies){
+			e.update();
+		}
 	}
 
 	@Override

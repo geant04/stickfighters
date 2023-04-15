@@ -74,15 +74,19 @@ public class LevelLoader {
     }
 
     public void render(SpriteBatch batch){
-        batch.begin(); // this just draws the map...
+        Tile t;
+        int id;
+        int[] x = {-1,1,0,0};
+        int[] y = {0,0,-1,1};
+        String enc;
+        Sprite sprite;
+
+        //batch.begin(); // this just draws the map...
         for(int i=0; i < map.length; i++){
             for(int j=0; j < map[0].length; j++){
-                Tile t = map[i][j];
-
-                int id = t.getId();
-                int[] x = {-1,1,0,0};
-                int[] y = {0,0,-1,1};
-                String enc = "";
+                t = map[i][j];
+                enc = "";
+                id = t.getId();
                 for(int u=0; u<4; u++){
                     int nx = i + x[u];
                     int ny = j + y[u];
@@ -102,7 +106,7 @@ public class LevelLoader {
                 t.setTexture(textures[id][indx].getTexture());
                 //t.setTexture(Integer.parseInt(String.valueOf(enc), 2));
 
-                Sprite sprite = t.getSprite();
+                sprite = t.getSprite();
                 sprite.setPosition(j * tile_size, i * tile_size);
                 sprite.setSize(tile_size, tile_size);
                 sprite.draw(batch);
@@ -112,7 +116,7 @@ public class LevelLoader {
                 // grab texture from that binary
             }
         }
-        batch.end();
+        //batch.end();
     }
 
 }
