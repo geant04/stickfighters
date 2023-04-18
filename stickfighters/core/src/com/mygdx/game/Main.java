@@ -4,10 +4,15 @@ import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.utils.Pool;
+import com.badlogic.gdx.utils.Pools;
 import com.badlogic.gdx.utils.ScreenUtils;
 
 public class Main extends ApplicationAdapter {
@@ -20,9 +25,13 @@ public class Main extends ApplicationAdapter {
 
 	public static LevelLoader level;
 	public static Array<Enemy> enemies;
-	public static Player player;
 
+	public static Pool<Enemy> enemyPool = Pools.get(Enemy.class);
+	public static Pool<BigEnemy> bigPool = Pools.get(BigEnemy.class);
+
+	public static Player player;
 	private float stateTime;
+	private BitmapFont font;
 
 	@Override
 	public void create () {
@@ -30,14 +39,31 @@ public class Main extends ApplicationAdapter {
 		camera.setToOrtho(false, WIDTH, HEIGHT);
 		camera.update();
 
+		this.font = new BitmapFont();
+
 		batch = new SpriteBatch();
 		shapeRenderer = new ShapeRenderer();
 		player = new Player(250, 50, 70);
 		player.set((int)camera.position.x, (int)camera.position.y);
-		enemies = new Array<>();
+		enemies = new Array<Enemy>();
+
+		Enemy guy = enemyPool.obtain();
+		Enemy guy2 = enemyPool.obtain();
+		BigEnemy guy3 = bigPool.obtain();
+
+		guy.init(new Vector2(300, 150));
+		guy2.init(new Vector2(350, 150));
+		guy3.init(new Vector2(350, 150));
+
+		enemies.add(guy);
+		enemies.add(guy2);
+		enemies.add(guy3);
+		/*
 		enemies.add(new Enemy(100, 50, 70,
 				new Vector2(300,150), 100));
-
+		enemies.add(new Enemy(80, 50, 70,
+				new Vector2(350,150), 140));
+		*/
 		Texture wall_txt = new Texture(Gdx.files.internal("template.png"));
 		Texture floor_txt = new Texture(Gdx.files.internal("flr.png"));
 
@@ -46,9 +72,9 @@ public class Main extends ApplicationAdapter {
 		 // consider using a texture atlas, i think you can shove this into the wall file
 
 		Tile[][] tmap = {
-				{floor, floor, floor, floor},
-				{floor, floor, floor, floor},
-				{floor, floor, floor, floor}
+				{floor, floor, floor, floor, floor ,floor},
+				{floor, floor, floor, floor, floor ,floor},
+				{floor, floor, floor, floor, floor ,floor},
 		};
 
 		this.level = new LevelLoader(tmap, 120, player, new int[]{1,1});
@@ -57,23 +83,23 @@ public class Main extends ApplicationAdapter {
 
 	@Override
 	public void render () {
-		stateTime += Gdx.graphics.getDeltaTime();
 		ScreenUtils.clear( (float) 0.5, (float) 0.5, (float) 0.5, 0);
 		// tell the camera to update its matrices.
-		camera.position.x = player.getX() + player.getWidth() / 2;
-		camera.position.y = player.getY() + player.getHeight() / 2;
+		stateTime += Gdx.graphics.getDeltaTime();
+		Matrix4 uiMatrix = camera.combined.cpy();
+		uiMatrix.setToOrtho2D(0, 0, WIDTH, HEIGHT);
+
+		float lerp = 9.5f;
+		Vector3 position = camera.position;
+		position.x += (player.getX() + player.getWidth() / 2 - position.x)
+				* lerp * Gdx.graphics.getDeltaTime();
+		position.y += (player.getY() + player.getHeight() / 2 - position.y)
+				* lerp * Gdx.graphics.getDeltaTime();
 		camera.update();
 
 		// tell the SpriteBatch to render in the
 		// coordinate system specified by the camera.
 		batch.setProjectionMatrix(camera.combined);
-
-		/*
-		shapeRenderer.setColor(Color.BLUE);
-		shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-		shapeRenderer.rect(0, 0, WIDTH, (HEIGHT_LIMIT) - player.getHeight() + 10);
-		shapeRenderer.end();
-		 */
 		batch.begin();
 			level.render(batch);
 			level.updatePlayer();
@@ -81,6 +107,10 @@ public class Main extends ApplicationAdapter {
 				e.render(batch, stateTime);
 			}
 			player.render(shapeRenderer, batch, camera, stateTime);
+		batch.end();
+		batch.setProjectionMatrix(uiMatrix);
+		batch.begin();
+		font.draw(batch,  " fps:" + Gdx.graphics.getFramesPerSecond(), 26, 65);
 		batch.end();
 		player.update();
 		for(Enemy e : enemies){

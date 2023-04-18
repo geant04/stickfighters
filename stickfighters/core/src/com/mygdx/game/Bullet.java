@@ -3,7 +3,7 @@ package com.mygdx.game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Sprite;
-import com.badlogic.gdx.math.Rectangle;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Pool;
 
@@ -13,7 +13,7 @@ public class Bullet implements Pool.Poolable{ // memory management good
     public Vector2 origin;
     public Vector2 position;
     public Vector2 size;
-    private Texture texture; // will have to adjust this later
+    private TextureRegion texture; // will have to adjust this later
     public boolean alive;
     public boolean hit;
     public Sprite sprite;
@@ -25,7 +25,7 @@ public class Bullet implements Pool.Poolable{ // memory management good
         this.hit = false;
     }
 
-    public void init(float posX, float posY, Texture texture,
+    public void init(float posX, float posY, TextureRegion texture,
                      Vector2 size, Vector2 dir, float speed) {
         origin.set(posX, posY);
         position.set(posX,  posY);
@@ -62,8 +62,5 @@ public class Bullet implements Pool.Poolable{ // memory management good
         position.set(0,0);
         alive = false;
         hit = false;
-    }
-    public void dispose(){
-        texture.dispose();
     }
 }

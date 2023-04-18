@@ -10,9 +10,12 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Pool;
+import com.badlogic.gdx.utils.Pools;
+
+import static com.mygdx.game.Main.enemies;
+import static com.mygdx.game.Main.enemyPool;
 
 public class Player {
     private final int speed;
@@ -27,12 +30,12 @@ public class Player {
     private float y;
 
     private final Sprite hand;
-    private int hand_offset = 20;
-    private int radius = 30;
-    private Texture hand_texture;
+    private int hand_offset = 0;
+    private int radius = 15;
     private Texture body_texture;
     private ShapeRenderer shapeRenderer;
     public Array<Weapon> arms;
+    public Weapon EQUIPPED_GUN;
 
     Animation<TextureRegion> walkAnimation;
     Animation<TextureRegion> idleAnimation;
@@ -49,14 +52,12 @@ public class Player {
     };
 
     public Player(int speed, int width, int height){
-        hand_texture = new Texture(Gdx.files.internal("badlogic.jpg"));
         //body_texture = new Texture(Gdx.files.internal("body.gif"));
 
         this.speed = speed;
         this.width = width;
         this.height = height;
 
-        hand = new Sprite(hand_texture);
         stick_sprite = new Texture(Gdx.files.internal("sheet_test.png"));
 
         TextureRegion[][] tmp = TextureRegion.split(stick_sprite,
@@ -82,7 +83,10 @@ public class Player {
         this.width = this.width;
         this.height = this.height;
         this.arms = new Array<>();
-        this.arms.add(new Weapon(0, 0, hand_texture, 1500));
+        this.arms.add(new Pistol());
+        this.EQUIPPED_GUN = arms.get(0);
+        hand = new Sprite(EQUIPPED_GUN.txtPack[0]);
+        hand.setSize(hand.getWidth() / 2.2f, hand.getHeight() / 2.2f);
         updateHand();
 
         shapeRenderer = new ShapeRenderer();
@@ -119,21 +123,40 @@ public class Player {
     // --------------------
     public void updateHand(){
         Vector2 pivot = Pivot();
-        hand.setX(pivot.x + radius);
-        hand.setY(pivot.y);
+        float a = 2;
+        float speed = 15;
+        float y = pivot.y - 10;
+        float rad = radius;
+        if(vx != 0 || vy != 0){
+            a = 3;
+            speed = 20;
+            y -= 4;
+            rad += vx * -3;
+        }
+        hand.setX(pivot.x + rad);
+        hand.setY((float) (y + a * Math.sin(stateTime * speed)));
     }
 
     public void update(){
+        Vector2 pivot = Pivot();
         Bullet item;
+        Enemy enem;
         if(Gdx.input.isKeyJustPressed(Input.Keys.J)){
-            arms.get(0).Attack(bulletPool, activeBullets, new Vector2(20, 20), new Vector2(getX(), getY()));
+            arms.get(0).Attack(bulletPool, activeBullets, new Vector2(20, 20),
+                    new Vector2(pivot.x + radius, getY() + 10));
         }
-        int len = activeBullets.size;
-        for (int i = len; --i >= 0;) {
+        for (int i = activeBullets.size; --i >= 0;) {
             item = activeBullets.get(i);
             if (!item.alive) {
                 activeBullets.removeIndex(i);
-                bulletPool.free(item);
+                Pools.free(item);
+            }
+        }
+        for (int i = enemies.size; --i >= 0;) {
+            enem = enemies.get(i);
+            if (!enem.ALIVE) {
+                enemies.removeIndex(i);
+                Pools.free(enem);
             }
         }
         this.vx = 0;
@@ -156,26 +179,28 @@ public class Player {
         if(Gdx.input.isKeyPressed(Input.Keys.W)) {
             vy = 1;
         }
-        radius = (flip ? -30 : 30);
+        radius = (flip ? -110 : 30);
         updateHand();
-
         for(Bullet b : activeBullets){
-            for(Enemy e : Main.enemies){
+            for(Enemy e : enemies){
                 if(e.isCollide(b)){
                     b.hit= true; // makes the bullet unalive itself
-                    e.damage(10);
+                    e.damage(10, (flip ? -1 : 1) * 20.0f);
                 }
             }
             b.update();
         }
+        for(Weapon w : arms){
+            w.update();
+        }
     }
 
     public Vector2 Pivot(){
-        return new Vector2(getX() + hand_offset, (float) (getY() + this.height / 2.5));
+        return new Vector2(getX(), (float) (getY() + this.height / 2.5));
     }
 
     public void render(ShapeRenderer shape, SpriteBatch batch, OrthographicCamera camera, float stateTime){
-        Vector3 cords = camera.unproject(new Vector3(Gdx.input.getX(), Gdx.input.getY(), 0));
+        this.stateTime = stateTime;
         shape.setProjectionMatrix(camera.combined);
         currAnim = idleAnimation;
         if(!(vx == 0 && vy == 0)){
@@ -188,12 +213,12 @@ public class Player {
         batch.draw(currentFrame, x, y, width / 2, 0, width, height,
                 (flip ? -1 : 1) * 1f, 1f, 0); // Draw current frame at (50, 50)
 
-        hand.setSize(width / 2, width / 2);
-        //hand.setRotation(angle);
+        hand.setScale((flip ? -1 : 1) * 1f, 1f);
         hand.draw(batch);
         for(Bullet b : activeBullets){
             Sprite sprite = b.getSprite();
-            sprite.setPosition(b.position.x + width/2, b.position.y + width/2);
+            sprite.setPosition(b.position.x, b.position.y + width/2);
+            sprite.setScale(b.dir.x < 0 ? -1 : 1, 1f);
             sprite.setSize(b.size.x, b.size.y);
             b.getSprite().draw(batch);
         }

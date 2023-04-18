@@ -7,13 +7,14 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.utils.Pool;
 
 // MAKE THIS IMPLEMENT POOLABLE LATER SO THAT YOU CAN RE-USE ENEMIES WHEN THEY DIE!!
-public class Enemy {
+public class Enemy implements Pool.Poolable{
     private int speed;
     private int width;
     private int height;
-    public static boolean flip = false;
+    private boolean flip = false;
 
     public float vx;
     public float vy;
@@ -36,18 +37,19 @@ public class Enemy {
     public int MAX_HEALTH;
     public float DAMAGE_DURATION;
     public float DAMAGE_TIME;
+    public float force;
     private Array<Animation<TextureRegion>> animations;
     private Player target;
 
-    public Enemy(int speed, int width, int height, Vector2 origin, int MAX_HEALTH){
+    public Enemy(){
+        this(100, 50, 70, 100);
+    }
+    public Enemy(int speed, int width, int height, int MAX_HEALTH){
         this.speed = speed;
         this.width = width;
         this.height = height;
-        this.x = origin.x;
-        this.y = origin.y;
         this.vy = 0;
         this.vx = 0;
-
         this.FOLLOW = false;
         this.IDLE = true;
         this.HURT = false;
@@ -55,10 +57,9 @@ public class Enemy {
         this.ALIVE = true;
         this.MAX_HEALTH = MAX_HEALTH;
         this.HEALTH = MAX_HEALTH;
-        this.DAMAGE_DURATION = 0.5f;
+        this.DAMAGE_DURATION = 0.25f;
         this.DAMAGE_TIME = 0;
-
-        // hierarchy: HURT --> ATTACK --> FOLLOW --> IDLE
+        this.force = 0f;
 
         stick_sprite = new Texture(Gdx.files.internal("sheet_test.png"));
 
@@ -81,6 +82,11 @@ public class Enemy {
         currAnim = animations.get(0);
         target = Main.player;
     }
+    public void init(Vector2 origin){
+        this.x = origin.x;
+        this.y = origin.y;
+        // hierarchy: HURT --> ATTACK --> FOLLOW --> IDLE
+    }
 
     public void set(float x, float y){
         this.x = x;
@@ -92,20 +98,25 @@ public class Enemy {
     }
 
     public boolean isCollide(Bullet b){
-        return x < b.position.x + b.size.x && y < b.position.y + b.size.y
-                && x + b.size.x > b.position.x && y + b.size.y > b.position.y;
+        return this.x < b.position.x + b.size.x && this.y < b.position.y + b.size.y
+                && this.x + b.size.x > b.position.x && this.y + b.size.y > b.position.y;
     }
 
-    public void damage(int amt){
-        if(this.HEALTH - amt < 0){ // dead state
+    public void damage(int amt, float force){ // force should be like some mathematical bs
+        this.force = force;
+        System.out.printf("hit for %d!, health left: %d\n", amt, HEALTH - amt);
+        if(this.HEALTH - amt <= 0){ // dead state
             this.ALIVE = false;
             //setHealth(this.MAX_HEALTH);
             return;
         }
         setHealth(this.HEALTH - amt); // have the pop-up for damage text
-        System.out.printf("hit for %d!, health left: %d\n", amt, HEALTH);
         DAMAGE_TIME = 0;
         HURT = true;
+    }
+
+    public void attack(){
+
     }
 
     public void update(){
@@ -113,8 +124,19 @@ public class Enemy {
         FOLLOW = false;
         ATTACK = false;
 
+        if(!ALIVE){
+            return;
+        }
         if(HURT){ // thanks fizzy
             DAMAGE_TIME += Gdx.graphics.getDeltaTime();
+            if(Math.abs(force) >= 0.1){
+                float decay = 120f;
+                x += 10 * force * Gdx.graphics.getDeltaTime();
+                if(force < 0){
+                    decay *= -1;
+                }
+                force -= decay * Gdx.graphics.getDeltaTime();
+            }
             if(DAMAGE_TIME >= DAMAGE_DURATION){
                 DAMAGE_TIME = 0;
                 HURT = false;
@@ -123,13 +145,11 @@ public class Enemy {
         }
         double dist = Math.sqrt((target.getX() - x) * (target.getX() - x) +
                 (target.getY() - y) * (target.getY() - y));
-        if(dist < 500){
+        if(dist < 300){
             FOLLOW = true;
             track();
-
-            float dx = vx * speed * Gdx.graphics.getDeltaTime();
-            float dy = vy * speed * Gdx.graphics.getDeltaTime();
-
+            float dx = vx * this.speed * Gdx.graphics.getDeltaTime();
+            float dy = vy * this.speed * Gdx.graphics.getDeltaTime();
             x += dx;
             y += dy;
         }
@@ -143,6 +163,7 @@ public class Enemy {
         float magnitude = (float) Math.sqrt(xDir * xDir + yDir * yDir); // in theory should work
         vx = xDir / magnitude;
         vy = yDir / magnitude;
+        flip = xDir < 0;
     }
 
     public Animation<TextureRegion> getAnim(){
@@ -161,16 +182,22 @@ public class Enemy {
     public void render(SpriteBatch batch, float stateTime){
         float time = stateTime;
         currAnim = getAnim();
-        if(HURT){
+        if(HURT){ // or if dead... will add this later
             time = DAMAGE_TIME;
         }
         TextureRegion currentFrame = currAnim.getKeyFrame(time, true);
         //batch.begin();
-        batch.draw(currentFrame, x, y, width / 2, 0, width, height,
+        batch.draw(currentFrame, this.x, this.y, this.width / 2, 0, this.width, this.height,
                 (flip ? -1 : 1) * 1f, 1f, 0);
         //batch.end();
     }
     public void dispose(){
         stick_sprite.dispose();
+    }
+    @Override
+    public void reset() {
+        x = 0;
+        y = 0;
+        ALIVE = false;
     }
 }
