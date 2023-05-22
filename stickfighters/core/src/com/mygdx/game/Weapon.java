@@ -7,24 +7,34 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Pool;
 
+/*
+    ID CLASSIFICATION CHART (YOU MUST READ THIS):
+        -1 : MELEE
+         0 : ONE-CLICK -- SEMI-AUTO (sniper, pistol, shotgun, missile strike)
+         1 : HOLD-DOWN -- AUTO (rifle, machine gun, flamethrower, laser-ray)
+
+    PLAN ON DOING: rifle class, extends weapon class by having id=1 <- not hard at all
+    PLAN ON DOING: shotgun class, extends weapon class by having id=0 <- maybe a little harder
+    PLAN ON DOING: sword class, extends weapon class by having id=-1 <- completely new mechanic
+ */
 public class Weapon {
-    public int type = 0; // -1 for melee, 0 is pistol, 1 is shotgun, 2 is auto
+    public int type = 0;
     public float cooldown;
     public Texture txt;
     public TextureRegion[] txtPack;
     public float speed;
     public int MAX_AMMO;
     public int AMMO;
-
+    public float DAMAGE;
     public float reloadTime;
     public float initTime;
-
-    private boolean cool;
+    public boolean cool;
     public Weapon(){
-        this(0, 0, 1, null, 1500, 10);
+        this(0, 0, 1, null, 1500, 10, 20);
     }
 
-    public Weapon(int type, float cooldown, float reloadTime, Texture txt, float speed, int MAX_AMMO) {
+    public Weapon(int type, float cooldown, float reloadTime,
+                  Texture txt, float speed, int MAX_AMMO, float DAMAGE) {
         this.type = type;
         this.cooldown = cooldown;
         this.reloadTime = reloadTime;
@@ -34,6 +44,7 @@ public class Weapon {
         this.txtPack = new TextureRegion[2];
         this.MAX_AMMO = MAX_AMMO;
         this.AMMO = MAX_AMMO;
+        this.DAMAGE = DAMAGE;
     }
     public void buildPack(){
         TextureRegion[][] tmp = TextureRegion.split(txt,

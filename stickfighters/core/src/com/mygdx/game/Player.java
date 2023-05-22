@@ -78,12 +78,13 @@ public class Player {
 
         stateTime = 0f;
 
-        this.x = width / 2;
+        this.x = width / 2f;
         this.y = 200;
-        this.width = this.width;
-        this.height = this.height;
         this.arms = new Array<>();
         this.arms.add(new Pistol());
+        this.arms.add(new Rifle());
+        this.arms.add(new Shotgun());
+
         this.EQUIPPED_GUN = arms.get(0);
         hand = new Sprite(EQUIPPED_GUN.txtPack[0]);
         hand.setSize(hand.getWidth() / 2.2f, hand.getHeight() / 2.2f);
@@ -140,9 +141,21 @@ public class Player {
     public void update(){
         Vector2 pivot = Pivot();
         Bullet item;
-        Enemy enem;
-        if(Gdx.input.isKeyJustPressed(Input.Keys.J)){
-            arms.get(0).Attack(bulletPool, activeBullets, new Vector2(20, 20),
+        Enemy enemy;
+        if(Gdx.input.isKeyJustPressed(Input.Keys.I)){ // change weapon
+            int indx = (arms.indexOf(EQUIPPED_GUN, false) + 1) % arms.size;
+            System.out.println("change gun to " + indx);
+            EQUIPPED_GUN = arms.get(indx);
+        }
+        if(EQUIPPED_GUN.type == 1){ // automatic
+            if(Gdx.input.isKeyPressed(Input.Keys.J)){
+                EQUIPPED_GUN.Attack(bulletPool, activeBullets, new Vector2(20, 20),
+                        new Vector2(pivot.x + radius, getY() + 10));
+            }
+        }
+        if(EQUIPPED_GUN.type != 1 &&
+                Gdx.input.isKeyJustPressed(Input.Keys.J)){
+            EQUIPPED_GUN.Attack(bulletPool, activeBullets, new Vector2(20, 20),
                     new Vector2(pivot.x + radius, getY() + 10));
         }
         for (int i = activeBullets.size; --i >= 0;) {
@@ -153,17 +166,14 @@ public class Player {
             }
         }
         for (int i = enemies.size; --i >= 0;) {
-            enem = enemies.get(i);
-            if (!enem.ALIVE) {
+            enemy = enemies.get(i);
+            if (!enemy.ALIVE) {
                 enemies.removeIndex(i);
-                Pools.free(enem);
+                Pools.free(enemy);
             }
         }
         this.vx = 0;
         this.vy = 0;
-
-        boolean deltaX = false;
-        boolean deltaY = false;
 
         if(Gdx.input.isKeyPressed(Input.Keys.A)) {
             vx = -1;
@@ -185,7 +195,7 @@ public class Player {
             for(Enemy e : enemies){
                 if(e.isCollide(b)){
                     b.hit= true; // makes the bullet unalive itself
-                    e.damage(10, (flip ? -1 : 1) * 20.0f);
+                    e.damage(EQUIPPED_GUN.DAMAGE, (flip ? -1 : 1) * b.force);
                 }
             }
             b.update();
@@ -210,14 +220,14 @@ public class Player {
 
         //batch.begin();
         //hand.setOriginCenter();
-        batch.draw(currentFrame, x, y, width / 2, 0, width, height,
+        batch.draw(currentFrame, x, y, width / 2f, 0, width, height,
                 (flip ? -1 : 1) * 1f, 1f, 0); // Draw current frame at (50, 50)
 
         hand.setScale((flip ? -1 : 1) * 1f, 1f);
         hand.draw(batch);
         for(Bullet b : activeBullets){
             Sprite sprite = b.getSprite();
-            sprite.setPosition(b.position.x, b.position.y + width/2);
+            sprite.setPosition(b.position.x, b.position.y + width/2f);
             sprite.setScale(b.dir.x < 0 ? -1 : 1, 1f);
             sprite.setSize(b.size.x, b.size.y);
             b.getSprite().draw(batch);

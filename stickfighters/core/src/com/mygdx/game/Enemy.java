@@ -93,8 +93,8 @@ public class Enemy implements Pool.Poolable{
         this.y = y;
     }
 
-    public void setHealth(int health){
-        this.HEALTH = health;
+    public void setHealth(float health){
+        this.HEALTH = (int) health;
     }
 
     public boolean isCollide(Bullet b){
@@ -102,9 +102,9 @@ public class Enemy implements Pool.Poolable{
                 && this.x + b.size.x > b.position.x && this.y + b.size.y > b.position.y;
     }
 
-    public void damage(int amt, float force){ // force should be like some mathematical bs
+    public void damage(float amt, float force){ // force should be like some mathematical bs
         this.force = force;
-        System.out.printf("hit for %d!, health left: %d\n", amt, HEALTH - amt);
+        System.out.printf("hit for %.3f!, health left: %.3f\n", amt, HEALTH - amt);
         if(this.HEALTH - amt <= 0){ // dead state
             this.ALIVE = false;
             //setHealth(this.MAX_HEALTH);

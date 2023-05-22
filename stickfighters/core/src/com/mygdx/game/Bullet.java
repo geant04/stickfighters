@@ -9,6 +9,7 @@ import com.badlogic.gdx.utils.Pool;
 
 public class Bullet implements Pool.Poolable{ // memory management good
     public float speed;
+    public float force = 20f;
     public Vector2 dir;
     public Vector2 origin;
     public Vector2 position;
@@ -16,6 +17,7 @@ public class Bullet implements Pool.Poolable{ // memory management good
     private TextureRegion texture; // will have to adjust this later
     public boolean alive;
     public boolean hit;
+    public int endurance = 1;
     public Sprite sprite;
 
     public Bullet(){
@@ -36,9 +38,23 @@ public class Bullet implements Pool.Poolable{ // memory management good
         this.size = size;
         alive = true;
     }
+
+    public void setEndurance(int lives){
+        // factors into bullet penetration
+        this.endurance = lives;
+    }
+    public void setForce(float f){
+        this.force = f;
+    }
+
+
     public void update(){
         if(hit){
-            alive = false;
+            if(endurance <= 0){
+                alive = false;
+                return;
+            }
+            endurance--;
             return;
         }
         if(distance() >= 250000){
