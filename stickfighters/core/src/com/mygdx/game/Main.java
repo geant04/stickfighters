@@ -47,17 +47,23 @@ public class Main extends ApplicationAdapter {
 		player.set((int)camera.position.x, (int)camera.position.y);
 		enemies = new Array<Enemy>();
 
+		Enemy dummy = enemyPool.obtain();
 		Enemy guy = enemyPool.obtain();
 		Enemy guy2 = enemyPool.obtain();
 		BigEnemy guy3 = bigPool.obtain();
+
+		dummy.init(new Vector2(100,100));
+		dummy.setSpeed(0);
 
 		guy.init(new Vector2(300, 150));
 		guy2.init(new Vector2(350, 150));
 		guy3.init(new Vector2(350, 150));
 
-		enemies.add(guy);
-		enemies.add(guy2);
-		enemies.add(guy3);
+		enemies.add(dummy);
+
+		//enemies.add(guy);
+		//enemies.add(guy2);
+		//enemies.add(guy3);
 		/*
 		enemies.add(new Enemy(100, 50, 70,
 				new Vector2(300,150), 100));
@@ -65,19 +71,22 @@ public class Main extends ApplicationAdapter {
 				new Vector2(350,150), 140));
 		*/
 		Texture wall_txt = new Texture(Gdx.files.internal("template.png"));
-		Texture floor_txt = new Texture(Gdx.files.internal("flr.png"));
+		Texture floor_txt = new Texture(Gdx.files.internal("materials/blueblock.png"));
 
 		Tile wall = new Wall(wall_txt);
 		Tile floor = new Floor(floor_txt);
 		 // consider using a texture atlas, i think you can shove this into the wall file
 
 		Tile[][] tmap = {
-				{floor, floor, floor, floor, floor ,floor},
-				{floor, floor, floor, floor, floor ,floor},
-				{floor, floor, floor, floor, floor ,floor},
+				{floor, floor, floor, floor, floor ,floor, floor, floor, floor, floor, floor ,floor},
+				{floor, floor, floor, floor, floor ,floor, floor, floor, floor, floor, floor ,floor},
+				{floor, floor, floor, floor, floor ,floor, floor, floor, floor, floor, floor ,floor},
+				{floor, floor, floor, floor, floor ,floor, floor, floor, floor, floor, floor ,floor},
+				{floor, floor, floor, floor, floor ,floor, floor, floor, floor, floor, floor ,floor},
+				{floor, floor, floor, floor, floor ,floor, floor, floor, floor, floor, floor ,floor}
 		};
 
-		this.level = new LevelLoader(tmap, 120, player, new int[]{1,1});
+		this.level = new LevelLoader(tmap, 60, player, new int[]{1,1});
 		this.stateTime = 0;
 	}
 

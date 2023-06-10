@@ -8,8 +8,8 @@ public class Pistol extends Weapon{
     public Pistol() {
         super(0, 5f / 1000, 0.5f,
                 null, 1500, 10, 20);
-        tx = new Texture(Gdx.files.internal("pistol.png"));
+        tx = new Texture(Gdx.files.internal("player/pistol.png"));
         this.txt = tx;
-        super.buildPack();
+        super.buildPack(); // i forgot what this does
     }
 }

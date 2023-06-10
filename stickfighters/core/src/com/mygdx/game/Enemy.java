@@ -97,9 +97,16 @@ public class Enemy implements Pool.Poolable{
         this.HEALTH = (int) health;
     }
 
+    public void setSpeed(int speed) { this.speed = speed; }
+
     public boolean isCollide(Bullet b){
         return this.x < b.position.x + b.size.x && this.y < b.position.y + b.size.y
                 && this.x + b.size.x > b.position.x && this.y + b.size.y > b.position.y;
+    }
+
+    public boolean isCollide(Vector2 origin, Vector2 size){
+        return this.x < origin.x + size.x && this.y < origin.y + size.y
+                && this.x + size.x > origin.x && this.y + size.y > origin.y;
     }
 
     public void damage(float amt, float force){ // force should be like some mathematical bs

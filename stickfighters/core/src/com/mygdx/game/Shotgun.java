@@ -11,9 +11,12 @@ public class Shotgun extends Weapon{
     public Shotgun() {
         super(0, 0.6f, 2f,
                 null, 2000, 20, 5);
-        tx = new Texture(Gdx.files.internal("pistol.png"));
+        tx = new Texture(Gdx.files.internal("player/shotgun.png"));
         this.txt = tx;
         super.buildPack();
+        this.x_offset = 0.3f;
+        this.y_offset = 15f;
+        this.bullet_start = 5f;
     }
 
     @Override

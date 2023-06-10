@@ -22,7 +22,7 @@ public class LevelLoader {
         this.player = player;
 
         Texture wall_txt = new Texture(Gdx.files.internal("template.png"));
-        Texture floor_txt = new Texture(Gdx.files.internal("flr.png"));
+        Texture floor_txt = new Texture(Gdx.files.internal("materials/grass.png"));
 
         TextureRegion[][] tmp = TextureRegion.split(wall_txt,
                 wall_txt.getWidth() / 4,
@@ -38,6 +38,7 @@ public class LevelLoader {
                 textures[0][(i*4)+j] = tmp2[i][j];
             }
         }
+
         player.set(source[0] * tile_size, source[1] * tile_size);
     }
 
@@ -56,8 +57,8 @@ public class LevelLoader {
         float dx = player.getVx() * speed * Gdx.graphics.getDeltaTime();
         float dy = player.getVy() * speed * Gdx.graphics.getDeltaTime();
 
-        int cx = (int) (player.getX() + dx + player.getWidth() / 2) /  tile_size;
-        int cy = (int) (player.getY() + dy) /  tile_size;
+        float cx = (player.getX() + dx + player.getWidth() / 2) /  tile_size;
+        float cy = (player.getY() + dy) /  tile_size;
 
         if(cx >= map[0].length || cx < 0){
             return;
@@ -65,8 +66,8 @@ public class LevelLoader {
         if(cy >= map.length || cy < 0){
             return;
         }
-        //System.out.println(cx + "," + cy);
-        if(!map[cy][cx].isCanCollide()){
+
+        if(!map[(int) cy][(int) cx].isCanCollide()){
             player.set(player.getX() + dx,
                     player.getY() + dy);
         }
