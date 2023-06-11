@@ -1,12 +1,16 @@
 package com.mygdx.game;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Pool;
+import javafx.animation.Animation;
+
 import static com.mygdx.game.Main.enemies;
+import static com.mygdx.game.Player.setAdjustedWidth;
 
 /*
     ID CLASSIFICATION CHART (YOU MUST READ THIS):
@@ -33,6 +37,10 @@ public class Weapon {
     public float x_offset;
     public float y_offset;
     public float bullet_start;
+    public Sound fire;
+    public float volume;
+    public Sound hit;
+
     public Weapon(){
         this(0, 0, 1, null, 1500, 10, 20);
     }
@@ -52,6 +60,7 @@ public class Weapon {
         this.x_offset = 0.8f;
         this.y_offset = 20f;
         this.bullet_start = 3f;
+        this.volume = 1f;
     }
 
     // splits our textures so that we can work with stuff well... I THINK THAT'S WHAT THIS DOES
@@ -66,61 +75,32 @@ public class Weapon {
         txtPack[1] = new TextureRegion(txt, 0, txt.getHeight()/2, 114, txt.getHeight()/2);
     }
     public void Attack(Pool<Bullet> bulletPool, Array<Bullet> activeBullets, Vector2 size, Vector2 origin){
-        // obviously this will get overrided based on what weapon you're using
         if((AMMO > 0 || MAX_AMMO == -1) && !cool){ // if MAX_AMMO == -1, there is infinite ammo
+            this.fire.play(this.volume);
             Bullet item = bulletPool.obtain();
             item.init(origin.x, origin.y, txtPack[1], size, new Vector2((Player.flip ? -1 : 1), 0), speed);
             activeBullets.add(item);
+
             if(MAX_AMMO != -1){
                 AMMO -= 1;
             }
             initTime = cooldown; // activate cooldown
-            if(AMMO <= 0){
+            if(AMMO <= 0 && MAX_AMMO != -1){
                 initTime = reloadTime;
             }
             cool = true;
-            return;
-        }
-        // reload now automatically
-        if(initTime <= 0){
-            if(cool){
-                cool = false;
-            }
-            if(AMMO <= 0){
-                AMMO = MAX_AMMO;
-            }
         }
     }
     public void update(){
         if(cool){
             initTime -= Gdx.graphics.getDeltaTime();
-        }
-    }
-    public void Attack(){
-        // melee attack, no clue what to add here
-        // the hitbox ranges are for y: origin.y +/- box_height/2
-        // for x : origin.x to origin.x + box_width
-        if(!cool){
-            int dir = (Player.flip ? -1 : 1);
-            int box_height = Player.height;
-            int box_width = Player.width / 4;
-            Vector2 org = new Vector2(Player.x + box_width * dir, Player.y);
-            Vector2 size = new Vector2(box_width, (float) box_height / 2);
-
-            for(Enemy e : enemies){
-                if(e.isCollide(org, size)){
-                    e.damage(20, dir * 1000);
+            if(this.initTime <= 0){
+                if(this.cool){
+                    this.cool = false;
                 }
-            }
-            initTime = cooldown;
-            cool = true;
-        }
-        if(initTime <= 0){
-            if(cool){
-                cool = false;
-            }
-            if(AMMO <= 0){
-                AMMO = MAX_AMMO;
+                if(this.AMMO <= 0){
+                    this.AMMO = this.MAX_AMMO;
+                }
             }
         }
     }

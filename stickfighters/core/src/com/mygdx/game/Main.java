@@ -2,9 +2,11 @@ package com.mygdx.game;
 
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Matrix4;
@@ -14,6 +16,7 @@ import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Pool;
 import com.badlogic.gdx.utils.Pools;
 import com.badlogic.gdx.utils.ScreenUtils;
+import com.mygdx.game.Enemies.BigEnemy;
 
 public class Main extends ApplicationAdapter {
 	public final static float WIDTH = 800;
@@ -32,6 +35,7 @@ public class Main extends ApplicationAdapter {
 	public static Player player;
 	private float stateTime;
 	private BitmapFont font;
+	private Sprite backgroundSprite;
 
 	@Override
 	public void create () {
@@ -54,16 +58,17 @@ public class Main extends ApplicationAdapter {
 
 		dummy.init(new Vector2(100,100));
 		dummy.setSpeed(0);
+		dummy.setHealth(1000000000);
 
 		guy.init(new Vector2(300, 150));
-		guy2.init(new Vector2(350, 150));
-		guy3.init(new Vector2(350, 150));
+		guy2.init(new Vector2(500, 150));
+		guy3.init(new Vector2(500, 150));
 
 		enemies.add(dummy);
 
-		//enemies.add(guy);
-		//enemies.add(guy2);
-		//enemies.add(guy3);
+		enemies.add(guy);
+		enemies.add(guy2);
+		enemies.add(guy3);
 		/*
 		enemies.add(new Enemy(100, 50, 70,
 				new Vector2(300,150), 100));
@@ -72,6 +77,7 @@ public class Main extends ApplicationAdapter {
 		*/
 		Texture wall_txt = new Texture(Gdx.files.internal("template.png"));
 		Texture floor_txt = new Texture(Gdx.files.internal("materials/blueblock.png"));
+		this.backgroundSprite = new Sprite(new Texture(Gdx.files.internal("background.png")));
 
 		Tile wall = new Wall(wall_txt);
 		Tile floor = new Floor(floor_txt);
@@ -104,7 +110,12 @@ public class Main extends ApplicationAdapter {
 				* lerp * Gdx.graphics.getDeltaTime();
 		position.y += (player.getY() + player.getHeight() / 2 - position.y)
 				* lerp * Gdx.graphics.getDeltaTime();
+
+		batch.begin();
+		batch.draw(backgroundSprite, 0 , 0, Gdx.graphics.getWidth(), Gdx.graphics.getWidth());
+		batch.end();
 		camera.update();
+
 
 		// tell the SpriteBatch to render in the
 		// coordinate system specified by the camera.
@@ -115,9 +126,9 @@ public class Main extends ApplicationAdapter {
 			for(Enemy e : enemies){
 				e.render(batch, stateTime);
 			}
-			player.render(shapeRenderer, batch, camera, stateTime);
+			player.render(batch, stateTime);
 		batch.end();
-		batch.setProjectionMatrix(uiMatrix);
+		batch.setProjectionMatrix(uiMatrix); // draw your UI stuff here
 		batch.begin();
 		font.draw(batch,  " fps:" + Gdx.graphics.getFramesPerSecond(), 26, 65);
 		batch.end();

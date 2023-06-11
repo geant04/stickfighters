@@ -1,22 +1,27 @@
-package com.mygdx.game;
+package com.mygdx.game.Weapons;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Pool;
+import com.mygdx.game.Bullet;
+import com.mygdx.game.Player;
+import com.mygdx.game.Weapon;
 
-public class Shotgun extends Weapon{
+public class Shotgun extends Weapon {
     public Texture tx;
     public Shotgun() {
         super(0, 0.6f, 2f,
-                null, 2000, 20, 5);
+                null, 3000, 20, 2);
         tx = new Texture(Gdx.files.internal("player/shotgun.png"));
         this.txt = tx;
+        this.fire = Gdx.audio.newSound(Gdx.files.internal("sounds/shotgun.ogg"));
         super.buildPack();
         this.x_offset = 0.3f;
         this.y_offset = 15f;
         this.bullet_start = 5f;
+        this.volume = 0.4f;
     }
 
     @Override
@@ -31,9 +36,11 @@ public class Shotgun extends Weapon{
                 dir.x = Player.flip ? -1 : 1;
                 dir.y = (float) (0.25 * Math.sin((i + Math.random()) / (2 * Math.PI)));
                 item.init(origin.x, origin.y, txtPack[1], size, dir,
-                        (float) (Math.random() * 2f + this.speed));
+                        (float) (Math.random() * 3f + this.speed));
                 activeBullets.add(item);
             }
+            this.fire.play(this.volume);
+
             if(this.MAX_AMMO != -1){
                 this.AMMO -= 1;
             }
@@ -42,16 +49,7 @@ public class Shotgun extends Weapon{
                 this.initTime = this.reloadTime;
             }
             this.cool = true;
-            return;
-        }
-        // reload now automatically
-        if(this.initTime <= 0){
-            if(this.cool){
-                this.cool = false;
-            }
-            if(this.AMMO <= 0){
-                this.AMMO = this.MAX_AMMO;
-            }
+            System.out.println("start, " + initTime);
         }
     }
 

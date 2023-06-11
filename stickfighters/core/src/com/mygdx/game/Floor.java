@@ -4,7 +4,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 
-public class Floor extends Tile{
+public class Floor extends Tile {
     private int id;
     private Texture txt;
     private Sprite sprite;

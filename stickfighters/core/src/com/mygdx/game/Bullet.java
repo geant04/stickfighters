@@ -37,6 +37,7 @@ public class Bullet implements Pool.Poolable{ // memory management good
         this.sprite = new Sprite(texture);
         this.size = size;
         alive = true;
+        System.out.println("start: " + posX + "," + posY);
     }
 
     public void setEndurance(int lives){
