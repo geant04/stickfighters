@@ -17,6 +17,8 @@ import com.badlogic.gdx.utils.Pool;
 import com.badlogic.gdx.utils.Pools;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.mygdx.game.Enemies.BigEnemy;
+import com.mygdx.game.Objects.Ammo;
+import com.mygdx.game.Objects.Bullet;
 
 public class Main extends ApplicationAdapter {
 	public final static float WIDTH = 800;
@@ -28,12 +30,47 @@ public class Main extends ApplicationAdapter {
 
 	public static LevelLoader level;
 	public static Array<Enemy> enemies;
+	private final Pool<Enemy> enemyPool = new Pool<Enemy>() {
+		@Override
+		protected Enemy newObject() {
+			return new Enemy();
+		}
+	};
+	private final Pool<BigEnemy> bigPool = new Pool<BigEnemy>() {
+		@Override
+		protected BigEnemy newObject() {
+			return new BigEnemy();
+		}
+	};
 
-	public static Pool<Enemy> enemyPool = Pools.get(Enemy.class);
-	public static Pool<BigEnemy> bigPool = Pools.get(BigEnemy.class);
+	public static Array<Bullet> activeBullets = new Array<Bullet>();
+	public static final Pool<Bullet> bulletPool = new Pool<Bullet>() {
+		@Override
+		protected Bullet newObject() {
+			return new Bullet();
+		}
+	};
+
+	public static Array<Ammo> activeAmmo = new Array<Ammo>();
+	public static final Pool<Ammo> ammoPool = new Pool<Ammo>() {
+		@Override
+		protected Ammo newObject() {
+			return new Ammo();
+		}
+	};
+	private Texture box;
 
 	public static Player player;
 	private float stateTime;
+	private float timer;
+	private int wave;
+	private int ems;
+	private int spawned;
+
+	public static int killed;
+	private int oldKilled;
+	private float silly;
+
 	private BitmapFont font;
 	private Sprite backgroundSprite;
 
@@ -44,44 +81,34 @@ public class Main extends ApplicationAdapter {
 		camera.update();
 
 		this.font = new BitmapFont();
+		font.getData().setScale(1.2f);
 
 		batch = new SpriteBatch();
 		shapeRenderer = new ShapeRenderer();
+		this.box = new Texture(Gdx.files.internal("badlogic.jpg"));
 		player = new Player(250, 50, 70);
 		player.set((int)camera.position.x, (int)camera.position.y);
 		enemies = new Array<Enemy>();
 
+		/*
 		Enemy dummy = enemyPool.obtain();
-		Enemy guy = enemyPool.obtain();
-		Enemy guy2 = enemyPool.obtain();
-		BigEnemy guy3 = bigPool.obtain();
-
 		dummy.init(new Vector2(100,100));
 		dummy.setSpeed(0);
-		dummy.setHealth(1000000000);
-
-		guy.init(new Vector2(300, 150));
-		guy2.init(new Vector2(500, 150));
-		guy3.init(new Vector2(500, 150));
+		dummy.setHealth(100);
 
 		enemies.add(dummy);
 
-		enemies.add(guy);
-		enemies.add(guy2);
-		enemies.add(guy3);
-		/*
-		enemies.add(new Enemy(100, 50, 70,
-				new Vector2(300,150), 100));
-		enemies.add(new Enemy(80, 50, 70,
-				new Vector2(350,150), 140));
+		Ammo box = ammoPool.obtain();
+		box.init(400, 100, this.box);
+		activeAmmo.add(box);
 		*/
+
 		Texture wall_txt = new Texture(Gdx.files.internal("template.png"));
 		Texture floor_txt = new Texture(Gdx.files.internal("materials/blueblock.png"));
 		this.backgroundSprite = new Sprite(new Texture(Gdx.files.internal("background.png")));
 
 		Tile wall = new Wall(wall_txt);
 		Tile floor = new Floor(floor_txt);
-		 // consider using a texture atlas, i think you can shove this into the wall file
 
 		Tile[][] tmap = {
 				{floor, floor, floor, floor, floor ,floor, floor, floor, floor, floor, floor ,floor},
@@ -94,8 +121,110 @@ public class Main extends ApplicationAdapter {
 
 		this.level = new LevelLoader(tmap, 60, player, new int[]{1,1});
 		this.stateTime = 0;
+		this.timer = 0f;
+
+		silly = 1f;
+		wave = 0;
+		ems = 4;
+		killed = 0;
+		oldKilled = 0;
 	}
 
+	public void waveSystem () {
+		timer -= Gdx.graphics.getDeltaTime();
+		if(timer <= 0){
+			timer = 2f;
+			if((enemies.size == 0
+					|| spawned <= Math.min(ems / 2f + 2 , 4 * silly)
+					|| killed - oldKilled >= 2) && spawned < ems){ // a substantial amount of guys are dead
+				for(int i = Math.min(2, ems - spawned); i > 0; i--){
+					Enemy e = enemyPool.obtain();
+					if(wave >= 3){
+						// crazy probability function
+						// \frac{50}{-x^{0.4}-1}+50
+						double xD = 50 / (-1 * Math.pow(silly, 0.4) - 1) + 50;
+						double p = Math.random() * 100;
+						if(p <= xD){
+							e = bigPool.obtain();
+						}
+					}
+					e.init(new Vector2((float) (Math.random() * 100 + 200), (float) (Math.random() * 100 + 100)));
+					enemies.add(e);
+					spawned++;
+				}
+			}
+			if(enemies.size == 0){
+				System.out.printf("Wave %d completed! Onto the wave %d\n", wave, wave + 1);
+				wave++;
+				killed = 0;
+				oldKilled = 0;
+				spawned = 0;
+				ems += 10;
+				silly += 2;
+				return;
+			}
+			if(stateTime % 4f <= 0.01f){
+				oldKilled = killed; // update the oldKilled amount
+			}
+			System.out.printf("spawned %d enemies, %d left in the wave\n",
+					spawned,
+					ems - spawned);
+		}
+		// keep spawning until half the enemies are there. then stop. If you killed enough people, do the other system
+	}
+
+	public void updateBeings(){
+		Bullet item;
+		Enemy enemy;
+		Ammo ammo;
+
+		for (int i = activeBullets.size; --i >= 0;) { // cleanup bullets
+			item = activeBullets.get(i);
+			if (!item.alive) {
+				activeBullets.removeIndex(i);
+				Pools.free(item);
+			}
+		}
+		for (int i = enemies.size; --i >= 0;) { // cleanup enemies
+			enemy = enemies.get(i);
+			if (!enemy.ALIVE && !enemy.DEADANIM) {
+				killed++;
+				if(Math.random() <= 0.80f){ // ~ 20% chance of an enemy dropping an ammo box
+					Ammo box = ammoPool.obtain();
+					box.init(enemy.getX(),enemy.getY(), this.box);
+					activeAmmo.add(box);
+				}
+				enemies.removeIndex(i);
+				Pools.free(enemy);
+			}
+		}
+		for (int i = activeAmmo.size; --i >= 0;) { // cleanup Ammo
+			ammo = activeAmmo.get(i);
+			if (!ammo.alive) {
+				activeAmmo.removeIndex(i);
+				Pools.free(ammo);
+			}
+		}
+
+		for(Enemy e : enemies){
+			e.update();
+		}
+		for(Bullet b : activeBullets){
+			for(Enemy e : enemies){
+				if(e.ALIVE && e.isCollide(b)){
+					b.hit= true; // makes the bullet unalive itself
+					e.damage(Player.EQUIPPED_GUN.DAMAGE, (Player.flip ? -1 : 1) * b.force);
+				}
+			}
+			b.update();
+		}
+		for(Ammo a : activeAmmo){
+			if(player.isCollide(a)){
+				a.hit = true;
+			}
+			a.update();
+		}
+	}
 	@Override
 	public void render () {
 		ScreenUtils.clear( (float) 0.5, (float) 0.5, (float) 0.5, 0);
@@ -116,13 +245,18 @@ public class Main extends ApplicationAdapter {
 		batch.end();
 		camera.update();
 
-
 		// tell the SpriteBatch to render in the
 		// coordinate system specified by the camera.
 		batch.setProjectionMatrix(camera.combined);
 		batch.begin();
 			level.render(batch);
 			level.updatePlayer();
+			for(Bullet b : activeBullets){
+				b.render(batch);
+			}
+			for(Ammo a : activeAmmo){
+				a.render(batch);
+			}
 			for(Enemy e : enemies){
 				e.render(batch, stateTime);
 			}
@@ -130,12 +264,16 @@ public class Main extends ApplicationAdapter {
 		batch.end();
 		batch.setProjectionMatrix(uiMatrix); // draw your UI stuff here
 		batch.begin();
-		font.draw(batch,  " fps:" + Gdx.graphics.getFramesPerSecond(), 26, 65);
+		font.draw(batch,  " fps:" + Gdx.graphics.getFramesPerSecond(), WIDTH / 100, 65);
+		font.draw(batch,  " HEALTH: " + player.health, WIDTH / 10 + 20, 65);
+		font.draw(batch,  " WAVE: " + wave, WIDTH / 3 + 20, 65);
+		font.draw(batch,  " AMMO: " + player.EQUIPPED_GUN.AMMO, WIDTH / 2 + 150, 65);
+		font.draw(batch, " POS: " + player.getX() + ", " + player.getY(), WIDTH / 10 + 20, 30);
 		batch.end();
+
+		waveSystem();
 		player.update();
-		for(Enemy e : enemies){
-			e.update();
-		}
+		updateBeings();
 	}
 
 	@Override

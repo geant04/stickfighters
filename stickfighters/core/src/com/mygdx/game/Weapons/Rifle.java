@@ -8,10 +8,10 @@ public class Rifle extends Weapon {
     public Texture tx;
     public Rifle() {
         super(1, 5f / 60, 2f,
-                null, 1500, -1, 2);
+                null, 1500, 10, 12);
         tx = new Texture(Gdx.files.internal("player/rifle.png"));
         this.fire = Gdx.audio.newSound(Gdx.files.internal("sounds/rifle.ogg"));
-        this.volume = 1f;
+        this.volume = 0.5f;
         this.txt = tx;
         super.buildPack();
         this.x_offset = 0.4f;

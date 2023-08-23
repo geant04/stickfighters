@@ -10,11 +10,15 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Pool;
+import com.mygdx.game.Objects.Bullet;
 import com.mygdx.game.Weapons.Fist;
+
+import static com.mygdx.game.LevelLoader.tile_size;
+import static com.mygdx.game.LevelLoader.map;
 
 // MAKE THIS IMPLEMENT POOLABLE LATER SO THAT YOU CAN RE-USE ENEMIES WHEN THEY DIE!!
 public class Enemy implements Pool.Poolable{
-    private static Weapon EQUIPPED_GUN;
+    public static Weapon EQUIPPED_GUN;
     private float adjustedWidth;
     public final Sprite hand;
     private int speed;
@@ -34,6 +38,7 @@ public class Enemy implements Pool.Poolable{
 
     Animation<TextureRegion> walkAnimation;
     Animation<TextureRegion> idleAnimation;
+    Animation<TextureRegion> deathAnimation;
     Animation<TextureRegion> currAnim;
     private Texture stick_sprite;
     float stateTime;
@@ -44,6 +49,7 @@ public class Enemy implements Pool.Poolable{
     public boolean HURT;
     public boolean ATTACK;
     public boolean ALIVE;
+    public boolean DEADANIM;
     public int HEALTH;
     public int MAX_HEALTH;
     public float DAMAGE_DURATION;
@@ -57,9 +63,10 @@ public class Enemy implements Pool.Poolable{
     private float cooldown;
     private boolean cool;
     private boolean anim;
+    private float yDir;
 
     public Enemy(){
-        this(100, 50, 70, 100);
+        this(110, 50, 70, 100);
     }
     public Enemy(int speed, int width, int height, int MAX_HEALTH){
         this.speed = speed;
@@ -78,28 +85,32 @@ public class Enemy implements Pool.Poolable{
         this.DAMAGE_TIME = 0;
         this.force = 0f;
         this.stateTime = 0f;
+        this.yDir = 0f;
 
-        stick_sprite = new Texture(Gdx.files.internal("sheet_test.png"));
 
-        TextureRegion[][] tmp = TextureRegion.split(stick_sprite,
+        stick_sprite = new Texture(Gdx.files.internal("sheet_test2.png"));
+
+        TextureRegion[][] tmp = TextureRegion.split(stick_sprite, // get the animations
                 stick_sprite.getWidth() / 6,
-                stick_sprite.getHeight() / 2);
+                stick_sprite.getHeight() / 3);
 
         TextureRegion[] idle = new TextureRegion[4];
         TextureRegion[] walkFrames = new TextureRegion[6];
+        TextureRegion[] death = new TextureRegion[6];
         for(int i=0 ; i<6; i++){ //load walk, idle
             walkFrames[i] = tmp[1][i];
+            death[i] = tmp[2][i];
             if(i<4){
                 idle[i]= tmp[0][i];
             }
         }
         walkAnimation = new Animation<TextureRegion>(0.07f, walkFrames);
         idleAnimation = new Animation<TextureRegion>(0.05f, idle);
+        deathAnimation = new Animation<TextureRegion>(0.17f, death);
         animations = new Array<>();
-        animations.add(idleAnimation, walkAnimation);
+        animations.add(idleAnimation, walkAnimation, deathAnimation);
         currAnim = animations.get(0);
         target = Main.player;
-
 
         this.EQUIPPED_GUN = new Fist();
         this.hand = new Sprite(EQUIPPED_GUN.txtPack[0]);
@@ -175,13 +186,15 @@ public class Enemy implements Pool.Poolable{
 
     public void damage(float amt, float force){ // force should be like some mathematical bs
         this.force = force;
-        System.out.printf("hit for %.3f!, health left: %.3f\n", amt, HEALTH - amt);
+        //System.out.printf("hit for %.3f!, health left: %.3f\n", amt, HEALTH - amt);
         if(this.HEALTH - amt <= 0){ // dead state
+            DAMAGE_TIME = 0;
+            this.DEADANIM = true;
             this.ALIVE = false;
             //setHealth(this.MAX_HEALTH);
             return;
         }
-        setHealth(this.HEALTH - amt); // have the pop-up for damage text
+        setHealth(Math.max(0, this.HEALTH - amt)); // have the pop-up for damage text
         DAMAGE_TIME = 0;
         HURT = true;
     }
@@ -195,7 +208,7 @@ public class Enemy implements Pool.Poolable{
         Vector2 size = new Vector2(box_width, box_height / 2);
 
         if(isCollide(target, org, size)){
-            target.setHealth((int) (target.getHealth() - EQUIPPED_GUN.DAMAGE));
+            target.setHealth((int) (Math.max(0 ,target.getHealth() - EQUIPPED_GUN.DAMAGE)));
             target.HURT = true;
             System.out.println("ouch, health left: " + target.health);
             EQUIPPED_GUN.hit.play(0.3f);
@@ -206,7 +219,7 @@ public class Enemy implements Pool.Poolable{
         this.initTime = this.cooldown;
         this.cool = true;
         this.anim = true;
-        System.out.println("start, " + initTime);
+        //System.out.println("start, " + initTime);
     }
 
     public void update(){ // the AI system
@@ -214,18 +227,35 @@ public class Enemy implements Pool.Poolable{
         FOLLOW = false;
 
         if(!ALIVE){
+            if(DEADANIM){
+                DAMAGE_TIME += Gdx.graphics.getDeltaTime();
+                if(DAMAGE_TIME >= 0.17f * 6 - 0.01f){ // epsilon be 0.01f
+                    DEADANIM = false;
+                }
+                return;
+            }
             return;
         }
+
         if(HURT){ // thanks fizzy
             DAMAGE_TIME += Gdx.graphics.getDeltaTime();
             if(Math.abs(force) >= 0.1){
                 float decay = 120f;
-                this.x += 10 * force * Gdx.graphics.getDeltaTime();
+                float d = 10 * force * Gdx.graphics.getDeltaTime();
                 if(force < 0){
                     decay *= -1;
                 }
                 force -= decay * Gdx.graphics.getDeltaTime();
-                hand.setX(this.x + radius);
+
+                float cx = (this.x + d + (width / 2)) /  tile_size; // needs to round down
+                float cy = (this.y) /  tile_size;
+                if(cx >= map[0].length || cx < 0){
+                    return;
+                }
+                if(!map[(int) cy][(int) cx].isCanCollide()){
+                    this.x += d;
+                    hand.setX(this.x + radius);
+                }
             }
             if(DAMAGE_TIME >= DAMAGE_DURATION){
                 DAMAGE_TIME = 0;
@@ -266,15 +296,26 @@ public class Enemy implements Pool.Poolable{
         }
         double dist = Math.sqrt((target.getX() - x) * (target.getX() - x) +
                 (target.getY() - y) * (target.getY() - y));
-        if(dist < 300){ // follow state
+        if(dist < 500){ // follow state
             FOLLOW = true;
             track();
             float dx = vx * this.speed * Gdx.graphics.getDeltaTime();
             float dy = vy * this.speed * Gdx.graphics.getDeltaTime();
-            this.x += dx;
-            this.y += dy;
 
-            if(dist < 40){
+            float cx = (this.x + dx + width / 2) /  tile_size;
+            float cy = (this.y + dy) /  tile_size;
+            if(cx >= map[0].length || cx < 0){
+                return;
+            }
+            if(cy >= map.length || cy < 0){
+                return;
+            }
+
+            if(!map[(int) cy][(int) cx].isCanCollide()){
+                this.x += dx;
+                this.y += dy;
+            }
+            if(dist < 40 && target.getHealth() > 0){
                 System.out.println("Attack mode!");
                 ATTACK = true;
                 attack();
@@ -289,15 +330,27 @@ public class Enemy implements Pool.Poolable{
     public void track(){ // called if state isn't IDLE
         // goal is to adjust vx and vy accordingly such that the unit vector points in the direction of the player
         // find delta x, find delta y, then normalize their values
+        // new system: every 4 seconds, add another vector such that the xDir and yDir target is between two coordinates
+        // --- create v2 which is math.random() * (y target delta) distance away
+        // --- new y direction is abs(v2) - abs(y) / 2
+
         float xDir = target.getX() - x;
-        float yDir = target.getY() - y;
-        float magnitude = (float) Math.sqrt(xDir * xDir + yDir * yDir); // in theory should work
+
+        if(stateTime % 1f <= 0.1){ // this might be bad for computation...
+            float delta = (target.getY() - y); // we need to recalculate yDir
+            this.yDir = delta * ((float) Math.random() * 1.2f);
+        }
+
+        float magnitude = (float) Math.sqrt(xDir * xDir + this.yDir * this.yDir); // in theory should work
         vx = xDir / magnitude;
-        vy = yDir / magnitude;
+        vy = this.yDir / magnitude;
         flip = xDir < 0;
     }
 
     public Animation<TextureRegion> getAnim(){
+        if(DEADANIM){
+            return animations.get(2);
+        }
         if(HURT){
             return animations.get(1);
         }
@@ -321,14 +374,19 @@ public class Enemy implements Pool.Poolable{
             time = DAMAGE_TIME;
             batch.setColor(Color.RED);
         }
-        TextureRegion currentFrame = currAnim.getKeyFrame(time, true);
-        //batch.begin();
-        batch.draw(currentFrame, this.x, this.y, this.width / 2f, 0, this.width, this.height,
-                (flip ? -1 : 1) * 1f, 1f, 0);
-
-        hand.setScale((flip ? -1 : 1) * 1f, 1f);
-        hand.setOrigin(width / 2f, 0);
-        hand.draw(batch);
+        if(DEADANIM){
+            time = DAMAGE_TIME;
+        }// Draw current frame at (50, 50)
+        if(ALIVE || DEADANIM){
+            TextureRegion currentFrame = currAnim.getKeyFrame(time, true);
+            batch.draw(currentFrame, this.x, this.y, this.width / 2f, 0, this.width, this.height,
+                    (flip ? -1 : 1) * 1f, 1f, 0);
+            if(!DEADANIM){
+                hand.setScale((flip ? -1 : 1) * 1f, 1f);
+                hand.setOrigin(width / 2f, 0);
+                hand.draw(batch);
+            }
+        }
 
         batch.setColor(Color.WHITE);
         //batch.end();
@@ -341,5 +399,6 @@ public class Enemy implements Pool.Poolable{
         x = 0;
         y = 0;
         ALIVE = false;
+        DEADANIM = false;
     }
 }

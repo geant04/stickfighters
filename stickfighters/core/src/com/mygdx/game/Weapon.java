@@ -7,10 +7,7 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Pool;
-import javafx.animation.Animation;
-
-import static com.mygdx.game.Main.enemies;
-import static com.mygdx.game.Player.setAdjustedWidth;
+import com.mygdx.game.Objects.Bullet;
 
 /*
     ID CLASSIFICATION CHART (YOU MUST READ THIS):
@@ -30,6 +27,7 @@ public class Weapon {
     public float speed;
     public int MAX_AMMO;
     public int AMMO;
+    public int AMMO_START;
     public float DAMAGE;
     public float reloadTime;
     public float initTime;
@@ -46,7 +44,7 @@ public class Weapon {
     }
 
     public Weapon(int type, float cooldown, float reloadTime,
-                  Texture txt, float speed, int MAX_AMMO, float DAMAGE) {
+                  Texture txt, float speed, int AMMO_START, float DAMAGE) {
         this.type = type;
         this.cooldown = cooldown;
         this.reloadTime = reloadTime;
@@ -54,8 +52,9 @@ public class Weapon {
         this.txt = txt;
         this.speed = speed;
         this.txtPack = new TextureRegion[2];
-        this.MAX_AMMO = MAX_AMMO;
-        this.AMMO = MAX_AMMO;
+        this.MAX_AMMO = 999;
+        this.AMMO_START = AMMO_START;
+        this.AMMO = AMMO_START;
         this.DAMAGE = DAMAGE;
         this.x_offset = 0.8f;
         this.y_offset = 20f;
@@ -85,9 +84,9 @@ public class Weapon {
                 AMMO -= 1;
             }
             initTime = cooldown; // activate cooldown
-            if(AMMO <= 0 && MAX_AMMO != -1){
-                initTime = reloadTime;
-            }
+            //if(AMMO <= 0 && MAX_AMMO != -1){
+              //  initTime = reloadTime;
+            //}
             cool = true;
         }
     }
@@ -97,9 +96,6 @@ public class Weapon {
             if(this.initTime <= 0){
                 if(this.cool){
                     this.cool = false;
-                }
-                if(this.AMMO <= 0){
-                    this.AMMO = this.MAX_AMMO;
                 }
             }
         }

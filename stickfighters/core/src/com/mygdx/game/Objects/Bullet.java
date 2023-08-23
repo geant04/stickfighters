@@ -1,11 +1,13 @@
-package com.mygdx.game;
+package com.mygdx.game.Objects;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Pool;
+
+import static com.mygdx.game.Main.activeBullets;
 
 public class Bullet implements Pool.Poolable{ // memory management good
     public float speed;
@@ -37,7 +39,7 @@ public class Bullet implements Pool.Poolable{ // memory management good
         this.sprite = new Sprite(texture);
         this.size = size;
         alive = true;
-        System.out.println("start: " + posX + "," + posY);
+        //System.out.println("start: " + posX + "," + posY);
     }
 
     public void setEndurance(int lives){
@@ -73,6 +75,15 @@ public class Bullet implements Pool.Poolable{ // memory management good
     }
     public Sprite getSprite(){
         return this.sprite;
+    }
+
+    public void render(Batch batch){
+        Sprite sprite = this.getSprite();
+        sprite.setPosition(this.position.x, this.position.y - 2 * this.size.y);
+        sprite.setScale(
+                this.dir.x < 0 ? -1 * this.size.x / sprite.getWidth() : this.size.x / sprite.getWidth(),
+                this.size.y / sprite.getHeight());
+        sprite.draw(batch);
     }
     @Override
     public void reset() {

@@ -3,7 +3,6 @@ package com.mygdx.game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.Sprite;
@@ -14,12 +13,17 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Pool;
 import com.badlogic.gdx.utils.Pools;
+import com.mygdx.game.Objects.Ammo;
+import com.mygdx.game.Objects.Bullet;
 import com.mygdx.game.Weapons.Fist;
 import com.mygdx.game.Weapons.Pistol;
 import com.mygdx.game.Weapons.Rifle;
 import com.mygdx.game.Weapons.Shotgun;
 
 import static com.mygdx.game.Main.enemies;
+import static com.mygdx.game.Main.activeBullets;
+import static com.mygdx.game.Main.bulletPool;
+
 
 public class Player {
     private float DAMAGE_TIME;
@@ -31,6 +35,8 @@ public class Player {
     public int MAX_HEALTH;
     public static boolean flip = false;
     public boolean HURT = false;
+    public boolean DEAD = false;
+    public boolean DEADANIM = false;
 
     public float vx = 1;
     public float vy = 1;
@@ -42,24 +48,21 @@ public class Player {
     private int radius = 15;
     private static float adjustedWidth;
 
-    private Sprite box;
+    private Texture box;
     private ShapeRenderer shapeRenderer;
-    public Array<Weapon> arms;
-    public Weapon EQUIPPED_GUN;
+    //public Array<Weapon> arms;
+    public Weapon[] weapons;
+    public int[] arms; // this is an int array keeping track of the arms indices
+    public int eindx;
+    public int arm_size;
+    public static Weapon EQUIPPED_GUN;
 
     Animation<TextureRegion> walkAnimation;
     Animation<TextureRegion> idleAnimation;
+    Animation<TextureRegion> deathAnimation;
     Animation<TextureRegion> currAnim;
     private Texture stick_sprite;
     float stateTime;
-
-    private final Array<Bullet> activeBullets = new Array<Bullet>();
-    private final Pool<Bullet> bulletPool = new Pool<Bullet>() {
-        @Override
-        protected Bullet newObject() {
-            return new Bullet();
-        }
-    };
 
     public Player(int speed, int width, int height){
         //body_texture = new Texture(Gdx.files.internal("body.gif"));
@@ -72,22 +75,24 @@ public class Player {
         this.DAMAGE_DURATION = 0.25f;
         this.DAMAGE_TIME = 0;
 
-        box = new Sprite(new Texture(Gdx.files.internal("badlogic.jpg")));
-        stick_sprite = new Texture(Gdx.files.internal("sheet_test.png"));
+        this.stick_sprite = new Texture(Gdx.files.internal("sheet_test2.png"));
 
         TextureRegion[][] tmp = TextureRegion.split(stick_sprite, // get the animations
                 stick_sprite.getWidth() / 6,
-                stick_sprite.getHeight() / 2);
+                stick_sprite.getHeight() / 3);
 
         TextureRegion[] idle = new TextureRegion[4];
         TextureRegion[] walkFrames = new TextureRegion[6];
+        TextureRegion[] death = new TextureRegion[6];
         for(int i=0 ; i<6; i++){ //load walk, idle
             walkFrames[i] = tmp[1][i];
+            death[i] = tmp[2][i];
             if(i<4){
                 idle[i]= tmp[0][i];
             }
         }
         walkAnimation = new Animation<TextureRegion>(0.07f, walkFrames);
+        deathAnimation = new Animation<TextureRegion>(0.17f, death);
         idleAnimation = new Animation<TextureRegion>(0.05f, idle);
         currAnim = idleAnimation;
 
@@ -95,13 +100,17 @@ public class Player {
 
         this.x = width / 2f;
         this.y = 200;
-        this.arms = new Array<>();
-        this.arms.add(new Fist());
-        this.arms.add(new Pistol());
-        this.arms.add(new Rifle());
-        this.arms.add(new Shotgun());
+        this.weapons = new Weapon[100]; // 100 inventory size
+        weapons[0] = new Fist();
+        weapons[1] = new Pistol();
+        weapons[2] = new Rifle();
+        weapons[3] = new Shotgun();
 
-        this.EQUIPPED_GUN = arms.get(0);
+        this.arm_size = 4;
+        this.eindx = 0;
+        this.arms = new int[]{0, 1, 2, 3};
+
+        this.EQUIPPED_GUN = weapons[arms[eindx]];
         hand = new Sprite(EQUIPPED_GUN.txtPack[0]);
         hand.setSize(hand.getWidth() / 3f, hand.getHeight() / 3f);
         updateHand();
@@ -162,27 +171,27 @@ public class Player {
     }
 
     public void update(){ // call every tick
-        Vector2 pivot = Pivot();
-        Bullet item;
-        Enemy enemy;
-        int dir = 1;
-
-        for (int i = activeBullets.size; --i >= 0;) { // cleanup bullets
-            item = activeBullets.get(i);
-            if (!item.alive) {
-                activeBullets.removeIndex(i);
-                Pools.free(item);
-            }
-        }
-        for (int i = enemies.size; --i >= 0;) { // cleanup enemies
-            enemy = enemies.get(i);
-            if (!enemy.ALIVE) {
-                enemies.removeIndex(i);
-                Pools.free(enemy);
-            }
-        }
+        int dir;
         this.vx = 0;
         this.vy = 0;
+
+        if(DEAD){
+            return;
+        }
+
+        if(DEADANIM){
+            DAMAGE_TIME += Gdx.graphics.getDeltaTime();
+            if(DAMAGE_TIME >= 0.17f * 6){
+                DEAD = true;
+                DEADANIM = false;
+            }
+            return;
+        }
+
+        if(getHealth() <= 0){
+            DEADANIM = true;
+            return;
+        }
 
         if(Gdx.input.isKeyPressed(Input.Keys.A)) { // movement
             vx = -1;
@@ -206,10 +215,10 @@ public class Player {
 
         int type = EQUIPPED_GUN.type; // save this so we can do some weapon swapping stuff
         if(Gdx.input.isKeyJustPressed(Input.Keys.I)){ // change weapon
-            int indx = (arms.indexOf(EQUIPPED_GUN, false) + 1) % arms.size;
-            System.out.println("change gun to " + indx);
+            eindx = (eindx + 1) % arm_size;
+            System.out.println("change gun to " + eindx);
 
-            EQUIPPED_GUN = arms.get(indx);
+            EQUIPPED_GUN = weapons[arms[eindx]];
             hand = new Sprite(EQUIPPED_GUN.txtPack[0]);
             hand.setSize(hand.getWidth() / 3f, hand.getHeight() / 3f); //1.25f i think for fist
             adjustedWidth = hand.getWidth() * this.EQUIPPED_GUN.x_offset;
@@ -226,17 +235,8 @@ public class Player {
                     new Vector2(x - adjustedWidth, getY() + 30));
         }
 
-        for(Bullet b : activeBullets){
-            for(Enemy e : enemies){
-                if(e.isCollide(b)){
-                    b.hit= true; // makes the bullet unalive itself
-                    e.damage(EQUIPPED_GUN.DAMAGE, (flip ? -1 : 1) * b.force);
-                }
-            }
-            b.update();
-        }
-        for(Weapon w : arms){
-            w.update();
+        for(int i=0; i<arm_size; i++){
+            weapons[arms[i]].update(); // be responsible for cooldowns going down + updating guns
         }
 
         if(HURT){ // thanks fizzy
@@ -245,7 +245,6 @@ public class Player {
                 DAMAGE_TIME = 0;
                 HURT = false;
             }
-            return;
         }
     }
 
@@ -257,38 +256,34 @@ public class Player {
         adjustedWidth = hand.getWidth() * newOffset;
     }
 
+    public boolean isCollide(Ammo b){ // this took me so fking long i want to kms
+        return this.x <= b.position.x && this.x + width >= b.position.x + b.size.x
+                && this.y >= b.position.y && this.y + height >= b.position.y + b.size.y;
+    }
     public void render(SpriteBatch batch, float stateTime){
         this.stateTime = stateTime;
+        float time = stateTime;
         //shape.setProjectionMatrix(camera.combined);
         currAnim = idleAnimation;
         if(!(vx == 0 && vy == 0)){
             currAnim = walkAnimation;
         }
-        if(HURT){ // or if dead... will add this later
+        if(!DEADANIM && HURT){ // or if dead... will add this later
             batch.setColor(Color.RED);
         }
-        TextureRegion currentFrame = currAnim.getKeyFrame(stateTime, true);
-
-        //batch.begin();
-        //hand.setOriginCenter();
-        batch.draw(currentFrame, x, y, width / 2f, 0, width, height,
-                (flip ? -1 : 1) * 1f, 1f, 0); // Draw current frame at (50, 50)
-
-        //box.setScale(0.4f,0.4f);
-        //box.setPosition(getX(),getY());
-        //box.draw(batch);
-        hand.setScale((flip ? -1 : 1) * 1f, 1f);
-        hand.setOrigin(width / 2f, 0);
-        hand.draw(batch);
-
-        for(Bullet b : activeBullets){
-            Sprite sprite = b.getSprite();
-            sprite.setPosition(b.position.x, b.position.y - 2 * b.size.y);
-            sprite.setScale(
-                    b.dir.x < 0 ? -1 * b.size.x / sprite.getWidth() : b.size.x / sprite.getWidth(),
-                    b.size.y / sprite.getHeight());
-            //sprite.setSize(b.size.x, b.size.y);
-            b.getSprite().draw(batch);
+        if(DEADANIM){
+            currAnim = deathAnimation;
+            time = DAMAGE_TIME;
+        }// Draw current frame at (50, 50)
+        if(!DEAD){
+            TextureRegion currentFrame = currAnim.getKeyFrame(time, true);
+            batch.draw(currentFrame, x, y, width / 2f, 0, width, height,
+                    (flip ? -1 : 1) * 1f, 1f, 0);
+            if(!DEADANIM){
+                hand.setScale((flip ? -1 : 1) * 1f, 1f);
+                hand.setOrigin(width / 2f, 0);
+                hand.draw(batch);
+            }
         }
         batch.setColor(Color.WHITE);
         //batch.end();

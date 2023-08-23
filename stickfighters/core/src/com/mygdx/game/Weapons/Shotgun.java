@@ -5,7 +5,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Pool;
-import com.mygdx.game.Bullet;
+import com.mygdx.game.Objects.Bullet;
 import com.mygdx.game.Player;
 import com.mygdx.game.Weapon;
 
@@ -13,7 +13,7 @@ public class Shotgun extends Weapon {
     public Texture tx;
     public Shotgun() {
         super(0, 0.6f, 2f,
-                null, 3000, 20, 2);
+                null, 3000, 5, 14);
         tx = new Texture(Gdx.files.internal("player/shotgun.png"));
         this.txt = tx;
         this.fire = Gdx.audio.newSound(Gdx.files.internal("sounds/shotgun.ogg"));
@@ -21,7 +21,7 @@ public class Shotgun extends Weapon {
         this.x_offset = 0.3f;
         this.y_offset = 15f;
         this.bullet_start = 5f;
-        this.volume = 0.4f;
+        this.volume = 0.1f;
     }
 
     @Override
@@ -45,11 +45,10 @@ public class Shotgun extends Weapon {
                 this.AMMO -= 1;
             }
             initTime = cooldown; // activate cooldown
-            if(this.AMMO <= 0){
+            if(this.AMMO <= 0 && this.MAX_AMMO != -1){
                 this.initTime = this.reloadTime;
             }
             this.cool = true;
-            System.out.println("start, " + initTime);
         }
     }
 

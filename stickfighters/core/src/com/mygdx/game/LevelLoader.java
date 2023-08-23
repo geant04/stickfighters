@@ -7,9 +7,9 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 
 public class LevelLoader {
-    private int tile_size;
+    public static int tile_size;
     private Player player;
-    private Tile[][] map;
+    public static Tile[][] map;
     private int px;
     private int py;
     private TextureRegion[][] textures;
