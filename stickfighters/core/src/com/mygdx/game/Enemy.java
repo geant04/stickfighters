@@ -97,6 +97,7 @@ public class Enemy implements Pool.Poolable{
         TextureRegion[] idle = new TextureRegion[4];
         TextureRegion[] walkFrames = new TextureRegion[6];
         TextureRegion[] death = new TextureRegion[6];
+
         for(int i=0 ; i<6; i++){ //load walk, idle
             walkFrames[i] = tmp[1][i];
             death[i] = tmp[2][i];
@@ -104,6 +105,7 @@ public class Enemy implements Pool.Poolable{
                 idle[i]= tmp[0][i];
             }
         }
+
         walkAnimation = new Animation<TextureRegion>(0.07f, walkFrames);
         idleAnimation = new Animation<TextureRegion>(0.05f, idle);
         deathAnimation = new Animation<TextureRegion>(0.17f, death);
@@ -131,12 +133,17 @@ public class Enemy implements Pool.Poolable{
         // hierarchy: HURT --> ATTACK --> FOLLOW --> IDLE
     }
 
-
+    public int getWidth(){
+        return this.width;
+    }
     public float getX(){
         return this.x;
     }
     public float getY(){
         return this.y;
+    }
+    public float getHealth(){
+        return this.HEALTH;
     }
 
     public void set(float x, float y){
@@ -187,14 +194,13 @@ public class Enemy implements Pool.Poolable{
     public void damage(float amt, float force){ // force should be like some mathematical bs
         this.force = force;
         //System.out.printf("hit for %.3f!, health left: %.3f\n", amt, HEALTH - amt);
-        if(this.HEALTH - amt <= 0){ // dead state
+        setHealth(Math.max(0f, this.HEALTH - amt)); // have the pop-up for damage text
+        if(this.HEALTH == 0){ // dead state
             DAMAGE_TIME = 0;
             this.DEADANIM = true;
             this.ALIVE = false;
-            //setHealth(this.MAX_HEALTH);
             return;
         }
-        setHealth(Math.max(0, this.HEALTH - amt)); // have the pop-up for damage text
         DAMAGE_TIME = 0;
         HURT = true;
     }

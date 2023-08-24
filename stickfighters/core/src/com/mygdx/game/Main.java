@@ -24,6 +24,9 @@ import com.mygdx.game.Objects.Bullet;
 public class Main extends ApplicationAdapter {
 	public final static float WIDTH = 800 * 2f;
 	public final static float HEIGHT = 600 * 2f;
+	public final static int TILE_SIZE = 250;
+	public final static int X_TILE = 3;
+	public final static int Y_TILE = 4;
 
 	private SpriteBatch batch;
 	private OrthographicCamera camera;
@@ -96,27 +99,15 @@ public class Main extends ApplicationAdapter {
 
 		this.font = new BitmapFont();
 		font.getData().setScale(1.2f);
-		/*
-		Enemy dummy = enemyPool.obtain();
-		dummy.init(new Vector2(100,100));
-		dummy.setSpeed(0);
-		dummy.setHealth(100);
-
-		enemies.add(dummy);
-
-		Ammo box = ammoPool.obtain();
-		box.init(400, 100, this.box);
-		activeAmmo.add(box);
-		*/
 
 		Texture wall_txt = new Texture(Gdx.files.internal("template.png"));
-		Texture floor_txt = new Texture(Gdx.files.internal("materials/grayblock.png"));
+		Texture floor_txt = new Texture(Gdx.files.internal("materials/lightsquare.png"));
 		this.backgroundSprite = new Sprite(new Texture(Gdx.files.internal("background.png")));
 
 		Tile wall = new Wall(wall_txt);
 		Tile floor = new Floor(floor_txt);
 
-		Tile[][] tmap = new Tile[3][4];
+		Tile[][] tmap = new Tile[X_TILE][Y_TILE];
 		for(int i=0; i<tmap.length; i++){
 			for(int j=0; j<tmap[0].length; j++){
 				tmap[i][j] = floor;
@@ -129,7 +120,7 @@ public class Main extends ApplicationAdapter {
 			spawn = new int[]{1, 1};
 		}
 
-		this.level = new LevelLoader(tmap, 250, player, spawn);
+		this.level = new LevelLoader(tmap, TILE_SIZE, player, spawn);
 		this.stateTime = 0;
 		this.timer = 0f;
 
@@ -162,6 +153,27 @@ public class Main extends ApplicationAdapter {
 					|| killed - oldKilled >= 2) && spawned < ems){ // a substantial amount of guys are dead
 				for(int i = Math.min(2, ems - spawned); i > 0; i--){
 					Enemy e = enemyPool.obtain();
+					// origin (x,y)  = 0
+					float player_radius = 20f;
+					float x_max = TILE_SIZE * X_TILE;
+					float y_max = TILE_SIZE * (Y_TILE - 1);
+
+					float x1 = Math.max(0, player.getAbsoluteX() - player_radius);
+					float x2 = Math.min(x_max, player.getAbsoluteX() + player_radius);
+
+					float y1 = Math.max(0, player.getAbsoluteY() - player_radius);
+					float y2 = Math.min(y_max, player.getAbsoluteY() + player_radius);
+
+					float ex = (float) Math.random() * x1;
+					float ey = (float) Math.random() * y1;
+
+					if(ex == 0 || (ex != 0 && Math.random() < 0.5f)){ // decide whether or not to spawn on the left or right
+						ex = (float) Math.random() * (x_max - x2) + x2;
+					}
+					if(ey == 0 || (ey != 0 && Math.random() < 0.5f)){
+						ey = (float) Math.random() * (y_max - y2) + y2;
+					}
+
 					if(wave >= 3){
 						// crazy probability function
 						// \frac{50}{-x^{0.4}-1}+50
@@ -171,7 +183,7 @@ public class Main extends ApplicationAdapter {
 							e = bigPool.obtain();
 						}
 					}
-					e.init(new Vector2((float) (Math.random() * 100 + 200), (float) (Math.random() * 100 + 100)));
+					e.init(new Vector2((float) ex, (float) ey));
 					enemies.add(e);
 					spawned++;
 				}
@@ -275,6 +287,31 @@ public class Main extends ApplicationAdapter {
 		batch.begin();
 			level.render(batch);
 			level.updatePlayer();
+		batch.end();
+		batch.begin();
+			for(Ammo a: activeAmmo){
+				shapeRenderer.setProjectionMatrix(camera.combined);
+				shapeRenderer.begin(ShapeType.Filled);
+				shapeRenderer.setColor(Color.BLACK);
+				shapeRenderer.rect(a.getX(), a.getOGY(), a.getWidth(), 3);
+				shapeRenderer.end();
+			}
+			for(Enemy e: enemies){
+				shapeRenderer.setProjectionMatrix(camera.combined);
+				shapeRenderer.begin(ShapeType.Filled);
+				shapeRenderer.setColor(Color.GREEN);
+				shapeRenderer.rect(e.getX(), e.getY() - 6, e.getHealth() * 0.6f, 4);
+				shapeRenderer.end();
+			}
+			shapeRenderer.setProjectionMatrix(camera.combined);
+			shapeRenderer.begin(ShapeType.Filled);
+			shapeRenderer.setColor(Color.GREEN);
+			shapeRenderer.rect(player.getX(), player.getY() - 6, player.getHealth() * 0.5f, 4);
+			shapeRenderer.end();
+			batch.end();
+
+		batch.setProjectionMatrix(camera.combined);
+		batch.begin();
 			for(Bullet b : activeBullets){
 				b.render(batch);
 			}
@@ -286,6 +323,7 @@ public class Main extends ApplicationAdapter {
 			}
 			player.render(batch, stateTime);
 		batch.end();
+
 		batch.setProjectionMatrix(uiMatrix); // draw your UI stuff here
 		batch.begin();
 			font.draw(batch,  " fps:" + Gdx.graphics.getFramesPerSecond(), WIDTH / 100, 65);

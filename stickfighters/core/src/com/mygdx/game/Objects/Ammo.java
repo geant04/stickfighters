@@ -17,6 +17,8 @@ public class Ammo implements Pool.Poolable{ // memory management good
     public boolean alive;
     public boolean hit;
     public float elapsed = 0f;
+    public float timeSine = (float) Math.sin(elapsed * 3.5f);
+    public float yOG = 0f;
     public Sprite sprite;
 
     public Ammo(){
@@ -30,9 +32,30 @@ public class Ammo implements Pool.Poolable{ // memory management good
         System.out.println("spawned");
         origin.set(posX, posY);
         position.set(posX,  posY);
+        this.yOG = posY;
         this.sprite = new Sprite(texture);
         this.size = new Vector2(40,40);
         alive = true;
+    }
+
+    public float getX(){
+        return this.position.x;
+    }
+    
+    public float getY(){
+        return this.position.y;
+    }
+
+    public float getOGY(){
+        return this.yOG;
+    }
+
+    public float getWidth(){
+        return this.size.x;
+    }
+
+    public float getSine(){
+        return this.timeSine * 0.2f;
     }
 
     // for now, ammo boxes replenish all the ammo, allowing the user to figure out how to manage their ammo
@@ -55,7 +78,8 @@ public class Ammo implements Pool.Poolable{ // memory management good
             return;
         }
         elapsed += Gdx.graphics.getDeltaTime();
-        position.set(position.x,  position.y + (float)Math.sin(elapsed * 3.5f) * 0.2f);
+        timeSine = (float) Math.sin(elapsed * 3.5f);
+        position.set(position.x,  position.y + timeSine * 0.2f);
     }
     public void render(Batch batch){
         Sprite sprite = this.getSprite();
