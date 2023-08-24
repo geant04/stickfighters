@@ -119,6 +119,12 @@ public class Player {
     }
 
     // some setters/getters
+    public float getAbsoluteX(){
+        return this.x + (width / 2f);
+    }
+    public float getAbsoluteY(){
+        return this.y + (height / 2f);
+    }
 
     public float getX(){
         return this.x;
@@ -256,10 +262,18 @@ public class Player {
         adjustedWidth = hand.getWidth() * newOffset;
     }
 
-    public boolean isCollide(Ammo b){ // this took me so fking long i want to kms
-        return this.x <= b.position.x && this.x + width >= b.position.x + b.size.x
-                && this.y >= b.position.y && this.y + height >= b.position.y + b.size.y;
+    public boolean isCollide(Ammo b){
+        float x1 = getAbsoluteX() - (width / 2f);
+        float x2 = getAbsoluteX() + (width / 2f);
+        boolean xright = (x2 <= b.position.x + b.size.x && x2 >= b.position.x);
+        boolean xleft = (x1 <= b.position.x + b.size.x && x1 >= b.position.x);
+        
+        float y1 = getAbsoluteY() - (height / 2f);
+        boolean ybottom = (y1 <= b.position.y + b.size.y && y1 >= b.position.y);
+        
+        return (xright || xleft) && (ybottom);
     }
+
     public void render(SpriteBatch batch, float stateTime){
         this.stateTime = stateTime;
         float time = stateTime;

@@ -9,6 +9,7 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
@@ -21,12 +22,11 @@ import com.mygdx.game.Objects.Ammo;
 import com.mygdx.game.Objects.Bullet;
 
 public class Main extends ApplicationAdapter {
-	public final static float WIDTH = 800;
-	public final static float HEIGHT = 600;
+	public final static float WIDTH = 800 * 2f;
+	public final static float HEIGHT = 600 * 2f;
 
 	private SpriteBatch batch;
 	private OrthographicCamera camera;
-	private ShapeRenderer shapeRenderer;
 
 	public static LevelLoader level;
 	public static Array<Enemy> enemies;
@@ -61,6 +61,7 @@ public class Main extends ApplicationAdapter {
 	private Texture box;
 
 	public static Player player;
+	private boolean isTesting;
 	private float stateTime;
 	private float timer;
 	private int wave;
@@ -73,23 +74,28 @@ public class Main extends ApplicationAdapter {
 
 	private BitmapFont font;
 	private Sprite backgroundSprite;
+	private ShapeRenderer shapeRenderer;
 
 	@Override
 	public void create () {
+		this.isTesting = false;
+
 		camera = new OrthographicCamera();
 		camera.setToOrtho(false, WIDTH, HEIGHT);
 		camera.update();
 
-		this.font = new BitmapFont();
-		font.getData().setScale(1.2f);
-
 		batch = new SpriteBatch();
-		shapeRenderer = new ShapeRenderer();
-		this.box = new Texture(Gdx.files.internal("badlogic.jpg"));
+		this.box = new Texture(Gdx.files.internal("objects/ammo.png"));
+
+		this.shapeRenderer = new ShapeRenderer();
+
 		player = new Player(250, 50, 70);
 		player.set((int)camera.position.x, (int)camera.position.y);
+
 		enemies = new Array<Enemy>();
 
+		this.font = new BitmapFont();
+		font.getData().setScale(1.2f);
 		/*
 		Enemy dummy = enemyPool.obtain();
 		dummy.init(new Vector2(100,100));
@@ -104,22 +110,26 @@ public class Main extends ApplicationAdapter {
 		*/
 
 		Texture wall_txt = new Texture(Gdx.files.internal("template.png"));
-		Texture floor_txt = new Texture(Gdx.files.internal("materials/blueblock.png"));
+		Texture floor_txt = new Texture(Gdx.files.internal("materials/grayblock.png"));
 		this.backgroundSprite = new Sprite(new Texture(Gdx.files.internal("background.png")));
 
 		Tile wall = new Wall(wall_txt);
 		Tile floor = new Floor(floor_txt);
 
-		Tile[][] tmap = {
-				{floor, floor, floor, floor, floor ,floor, floor, floor, floor, floor, floor ,floor},
-				{floor, floor, floor, floor, floor ,floor, floor, floor, floor, floor, floor ,floor},
-				{floor, floor, floor, floor, floor ,floor, floor, floor, floor, floor, floor ,floor},
-				{floor, floor, floor, floor, floor ,floor, floor, floor, floor, floor, floor ,floor},
-				{floor, floor, floor, floor, floor ,floor, floor, floor, floor, floor, floor ,floor},
-				{floor, floor, floor, floor, floor ,floor, floor, floor, floor, floor, floor ,floor}
-		};
+		Tile[][] tmap = new Tile[3][4];
+		for(int i=0; i<tmap.length; i++){
+			for(int j=0; j<tmap[0].length; j++){
+				tmap[i][j] = floor;
+			}
+		}
+		int[] spawn = new int[]{2,2};
 
-		this.level = new LevelLoader(tmap, 60, player, new int[]{1,1});
+		if(isTesting){
+			TestZone();
+			spawn = new int[]{1, 1};
+		}
+
+		this.level = new LevelLoader(tmap, 250, player, spawn);
 		this.stateTime = 0;
 		this.timer = 0f;
 
@@ -128,6 +138,19 @@ public class Main extends ApplicationAdapter {
 		ems = 4;
 		killed = 0;
 		oldKilled = 0;
+	}
+
+	public void TestZone() {
+		Enemy dummy = enemyPool.obtain();
+		dummy.init(new Vector2(100,100));
+		dummy.setSpeed(0);
+		dummy.setHealth(100);
+
+		enemies.add(dummy);
+
+		Ammo box = ammoPool.obtain();
+		box.init(400, 100, this.box);
+		activeAmmo.add(box);
 	}
 
 	public void waveSystem () {
@@ -225,6 +248,7 @@ public class Main extends ApplicationAdapter {
 			a.update();
 		}
 	}
+
 	@Override
 	public void render () {
 		ScreenUtils.clear( (float) 0.5, (float) 0.5, (float) 0.5, 0);
@@ -264,14 +288,35 @@ public class Main extends ApplicationAdapter {
 		batch.end();
 		batch.setProjectionMatrix(uiMatrix); // draw your UI stuff here
 		batch.begin();
-		font.draw(batch,  " fps:" + Gdx.graphics.getFramesPerSecond(), WIDTH / 100, 65);
-		font.draw(batch,  " HEALTH: " + player.health, WIDTH / 10 + 20, 65);
-		font.draw(batch,  " WAVE: " + wave, WIDTH / 3 + 20, 65);
-		font.draw(batch,  " AMMO: " + player.EQUIPPED_GUN.AMMO, WIDTH / 2 + 150, 65);
-		font.draw(batch, " POS: " + player.getX() + ", " + player.getY(), WIDTH / 10 + 20, 30);
+			font.draw(batch,  " fps:" + Gdx.graphics.getFramesPerSecond(), WIDTH / 100, 65);
+			font.draw(batch,  " HEALTH: " + player.health, WIDTH / 10 + 20, 65);
+			font.draw(batch,  " WAVE: " + wave, WIDTH / 3 + 20, 65);
+			font.draw(batch,  " AMMO: " + player.EQUIPPED_GUN.AMMO, WIDTH / 2 + 150, 65);
+			font.draw(batch, " POS: " + player.getX() + ", " + player.getY(), WIDTH / 10 + 20, 30);
+			font.draw(batch, " ADJ.POS: " + player.getAbsoluteX() + ", " + player.getAbsoluteY(), WIDTH / 10 + 20, 10);
 		batch.end();
 
-		waveSystem();
+		if(!isTesting){
+			waveSystem();
+		}else{
+			shapeRenderer.setProjectionMatrix(camera.combined);
+			shapeRenderer.begin(ShapeType.Line);
+			shapeRenderer.setColor(Color.RED);
+			shapeRenderer.rect(player.getAbsoluteX(), player.getAbsoluteY(), 10, 10);
+			shapeRenderer.end();
+
+			shapeRenderer.setProjectionMatrix(camera.combined);
+			shapeRenderer.begin(ShapeType.Line);
+			shapeRenderer.setColor(Color.BLUE);
+			shapeRenderer.rect(player.getX(), player.getY(), 10, 10);
+			shapeRenderer.end();
+
+			shapeRenderer.setProjectionMatrix(camera.combined);
+			shapeRenderer.begin(ShapeType.Line);
+			shapeRenderer.setColor(Color.GREEN);
+			shapeRenderer.rect(player.getX(), player.getY(), player.getWidth(), player.getHeight());
+			shapeRenderer.end();
+		}
 		player.update();
 		updateBeings();
 	}

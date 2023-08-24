@@ -55,6 +55,7 @@ public class Ammo implements Pool.Poolable{ // memory management good
             return;
         }
         elapsed += Gdx.graphics.getDeltaTime();
+        position.set(position.x,  position.y + (float)Math.sin(elapsed * 3.5f) * 0.2f);
     }
     public void render(Batch batch){
         Sprite sprite = this.getSprite();
