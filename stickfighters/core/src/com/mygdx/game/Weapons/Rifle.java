@@ -10,12 +10,17 @@ public class Rifle extends Weapon {
         super(1, 5f / 60, 2f,
                 null, 1500, 10, 12);
         tx = new Texture(Gdx.files.internal("player/rifle.png"));
+
         this.fire = Gdx.audio.newSound(Gdx.files.internal("sounds/rifle.ogg"));
         this.volume = 0.5f;
+
         this.txt = tx;
         super.buildPack();
+
         this.x_offset = 0.4f;
         this.y_offset = 12f;
         this.bullet_start = 4f;
+
+        this.MAX_AMMO = 100;
     }
 }

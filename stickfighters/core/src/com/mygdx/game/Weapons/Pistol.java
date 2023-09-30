@@ -11,8 +11,12 @@ public class Pistol extends Weapon {
                 null, 1500, 5, 35);
         tx = new Texture(Gdx.files.internal("player/pistol.png"));
         this.txt = tx;
+
         this.fire = Gdx.audio.newSound(Gdx.files.internal("sounds/pistol.ogg"));
         this.volume = 0.2f;
+
+        this.MAX_AMMO = 30;
+
         super.buildPack(); // i forgot what this does
     }
 }

@@ -13,10 +13,12 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Pool;
 import com.badlogic.gdx.utils.Pools;
 import com.badlogic.gdx.utils.ScreenUtils;
+import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.mygdx.game.Enemies.BigEnemy;
 import com.mygdx.game.Objects.Ammo;
 import com.mygdx.game.Objects.Bullet;
@@ -261,28 +263,7 @@ public class Main extends ApplicationAdapter {
 		}
 	}
 
-	@Override
-	public void render () {
-		ScreenUtils.clear( (float) 0.5, (float) 0.5, (float) 0.5, 0);
-		// tell the camera to update its matrices.
-		stateTime += Gdx.graphics.getDeltaTime();
-		Matrix4 uiMatrix = camera.combined.cpy();
-		uiMatrix.setToOrtho2D(0, 0, WIDTH, HEIGHT);
-
-		float lerp = 9.5f;
-		Vector3 position = camera.position;
-		position.x += (player.getX() + player.getWidth() / 2 - position.x)
-				* lerp * Gdx.graphics.getDeltaTime();
-		position.y += (player.getY() + player.getHeight() / 2 - position.y)
-				* lerp * Gdx.graphics.getDeltaTime();
-
-		batch.begin();
-		batch.draw(backgroundSprite, 0 , 0, Gdx.graphics.getWidth(), Gdx.graphics.getWidth());
-		batch.end();
-		camera.update();
-
-		// tell the SpriteBatch to render in the
-		// coordinate system specified by the camera.
+	public void renderObjects(){
 		batch.setProjectionMatrix(camera.combined);
 		batch.begin();
 			level.render(batch);
@@ -323,6 +304,11 @@ public class Main extends ApplicationAdapter {
 			}
 			player.render(batch, stateTime);
 		batch.end();
+	}
+	public void renderUI(Matrix4 uiMatrix){
+		//Stage stage = new Stage(new ScreenViewport());
+		//Gdx.input.setInputProcessor(stage);
+		// you need an actor for text on SCREEN... YAY.... YAY.... YAY. I think all of this junk needs to be in a different class
 
 		batch.setProjectionMatrix(uiMatrix); // draw your UI stuff here
 		batch.begin();
@@ -333,6 +319,32 @@ public class Main extends ApplicationAdapter {
 			font.draw(batch, " POS: " + player.getX() + ", " + player.getY(), WIDTH / 10 + 20, 30);
 			font.draw(batch, " ADJ.POS: " + player.getAbsoluteX() + ", " + player.getAbsoluteY(), WIDTH / 10 + 20, 10);
 		batch.end();
+	}
+
+	@Override
+	public void render () {
+		ScreenUtils.clear( (float) 0.5, (float) 0.5, (float) 0.5, 0);
+		// tell the camera to update its matrices.
+		stateTime += Gdx.graphics.getDeltaTime();
+		Matrix4 uiMatrix = camera.combined.cpy();
+		uiMatrix.setToOrtho2D(0, 0, WIDTH, HEIGHT);
+
+		float lerp = 9.5f;
+		Vector3 position = camera.position;
+		position.x += (player.getX() + player.getWidth() / 2 - position.x)
+				* lerp * Gdx.graphics.getDeltaTime();
+		position.y += (player.getY() + player.getHeight() / 2 - position.y)
+				* lerp * Gdx.graphics.getDeltaTime();
+
+		batch.begin();
+		batch.draw(backgroundSprite, 0 , 0, Gdx.graphics.getWidth(), Gdx.graphics.getWidth());
+		batch.end();
+		camera.update();
+
+		// tell the SpriteBatch to render in the
+		// coordinate system specified by the camera.
+		renderObjects();
+		renderUI(uiMatrix);
 
 		if(!isTesting){
 			waveSystem();

@@ -16,6 +16,7 @@ public class Shotgun extends Weapon {
                 null, 3000, 5, 14);
         tx = new Texture(Gdx.files.internal("player/shotgun.png"));
         this.txt = tx;
+        this.MAX_AMMO = 20;
         this.fire = Gdx.audio.newSound(Gdx.files.internal("sounds/shotgun.ogg"));
         super.buildPack();
         this.x_offset = 0.3f;

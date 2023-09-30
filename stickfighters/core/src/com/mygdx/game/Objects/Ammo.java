@@ -67,7 +67,7 @@ public class Ammo implements Pool.Poolable{ // memory management good
             for(int i = 0; i < p.arm_size; i++){
                 int idx = p.arms[i];
                 Weapon w = p.weapons[idx];
-                w.AMMO += Math.min(w.MAX_AMMO - w.AMMO_START, w.AMMO_START);
+                w.AMMO = Math.min(w.MAX_AMMO, w.AMMO + Math.min(w.MAX_AMMO - w.AMMO_START, w.AMMO_START));
             }
             alive = false;
             return;
