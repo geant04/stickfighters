@@ -279,16 +279,16 @@ public class Main extends ApplicationAdapter {
 			}
 			for(Enemy e: enemies){
 				shapeRenderer.setProjectionMatrix(camera.combined);
-				shapeRenderer.begin(ShapeType.Filled);
-				shapeRenderer.setColor(Color.GREEN);
-				shapeRenderer.rect(e.getX(), e.getY() - 6, e.getHealth() * 0.6f, 4);
-				shapeRenderer.end();
+				//shapeRenderer.begin(ShapeType.Filled);
+				//shapeRenderer.setColor(Color.GREEN);
+				//shapeRenderer.rect(e.getX(), e.getY() - 6, e.getHealth() * 0.6f, 4);
+				//shapeRenderer.end();
 			}
 			shapeRenderer.setProjectionMatrix(camera.combined);
-			shapeRenderer.begin(ShapeType.Filled);
-			shapeRenderer.setColor(Color.GREEN);
-			shapeRenderer.rect(player.getX(), player.getY() - 6, player.getHealth() * 0.5f, 4);
-			shapeRenderer.end();
+			//shapeRenderer.begin(ShapeType.Filled);
+			//shapeRenderer.setColor(Color.GREEN);
+			//shapeRenderer.rect(player.getX(), player.getY() - 6, player.getHealth() * 0.5f, 4);
+			//shapeRenderer.end();
 			batch.end();
 
 		batch.setProjectionMatrix(camera.combined);
